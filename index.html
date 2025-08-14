@@ -194,9 +194,16 @@
         </div>
       </section>
 
-      <!-- NOVO: Planos de Contas (Alertas 80%+) ao lado de Cancelamentos -->
+      <!-- ÚNICO CARD: Travas em cima + Lista de planos embaixo -->
       <section class="card panel section">
-        <h3>4) Planos de Contas — Alertas (≥80% vs mês anterior) <span class="badge" id="planosBadge">—</span></h3>
+        <h3>4) Travas de Compras + Planos de Contas (≥80% do mês anterior) 
+          <span class="badge" id="planosBadge">—</span>
+        </h3>
+
+        <!-- Travas (antes ficava no bloco 5) -->
+        <div id="travasWrap" class="row" style="flex-direction:column;align-items:stretch;gap:12px;margin-bottom:10px"></div>
+
+        <!-- Lista de alertas de planos (embaixo) -->
         <div class="planos-list">
           <table class="table" id="tblPlanos">
             <thead>
@@ -210,11 +217,6 @@
             <tbody></tbody>
           </table>
         </div>
-      </section>
-
-      <section class="card panel section">
-        <h3>5) Travas de Compras</h3>
-        <div id="travasWrap" class="row" style="flex-direction:column;align-items:stretch;gap:12px"></div>
       </section>
     </div>
 
@@ -252,7 +254,7 @@ const PLANOS_VALIDOS = new Set([
   'Fornecedores em geral (insumos)','Bebidas (adegas)','Cerveja/Long','Refrigerantes/água/suco',
   'Frios/congelados','Doces e chocolates','Laticínios','Gelatto','Hortaliças (Padaria)','Hortifruti',
   'Processados/assados (Panificação)','Salmão','Pescados (peixaria)','Chopp Brahma',
-  'Açougues','Aves','Mercados Locais LEM','Mercado (Materiais Não Consumo)'
+  'Açougues','Aves','Mercados Locais LEM','Mercado (Materiais Não Consumo)
 ]);
 
 /********************** ESTADO *************************/
@@ -295,7 +297,7 @@ function fmtYM(ym){ if(!ym) return '—'; const [y,m]=ym.split('-'); return `${m
 function prevMonthYM(ym){
   if(!ym || ym.length<7) return '';
   const [y,m] = ym.split('-').map(Number);
-  const d = new Date(y, (m-1)-1, 1); // mês anterior
+  const d = new Date(y, (m-1)-1, 1);
   const yy = d.getFullYear();
   const mm = ('0'+(d.getMonth()+1)).slice(-2);
   return `${yy}-${mm}`;
@@ -402,7 +404,7 @@ async function refreshAll(){
   const metasArr = normalizeMetasPayload(metasPacked);
   const metas = pickUltimaMeta(metasArr, state.empresa);
 
-  // VENDAS POR DIA (gráfico de dias)
+  // VENDAS POR DIA
   let vendasDia = null;
   if (ENDPOINTS.VENDAS_DIA) {
     try {
@@ -416,7 +418,7 @@ async function refreshAll(){
 
       let janela = [];
       if (_vendasPrimeiroCarregamento) {
-        janela = norm.slice(-7); // últimos 7 dias
+        janela = norm.slice(-7);
         _vendasPrimeiroCarregamento = false;
       } else {
         const ini = state.periodo.inicio || '0000-01-01';
@@ -429,24 +431,20 @@ async function refreshAll(){
       const inicio = janela[0]?.dataISO || '';
       const fim    = janela[janela.length-1]?.dataISO || inicio;
 
-      vendasDia = {
-        inicio, fim,
-        totalHoje: valores.reduce((a,b)=>a+b,0),
-        labels, valores
-      };
+      vendasDia = { inicio, fim, totalHoje: valores.reduce((a,b)=>a+b,0), labels, valores };
     } catch (e) {
       vendasDia = null;
       _vendasPrimeiroCarregamento = false;
     }
   }
 
-  // CANCELAMENTOS — últimos 7 dias no 1º load, depois filtros
+  // CANCELAMENTOS
   let cancelamentos = null;
   if (ENDPOINTS.CANCELAMENTOS){
     try{
       if (_cancPrimeiroCarregamento){
         const fim = todayISO();
-        const inicio = addDaysISO(fim, -6); // janela de 7 dias
+        const inicio = addDaysISO(fim, -6);
         cancelamentos = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, { empresa: state.empresa, inicio, fim }));
         cancelamentos.inicio = inicio; cancelamentos.fim = fim;
         _cancPrimeiroCarregamento = false;
@@ -471,8 +469,9 @@ async function refreshAll(){
   renderMetas(metas);
   renderVendasDia(vendasDia);
   renderCancelamentos(cancelamentos);
-  renderPlanosAlertas(travasAtual, travasPrev, periodoMes, periodoPrev);
+  // importa a ordem: travas primeiro, lista depois (no mesmo card)
   renderTravas(travasAtual);
+  renderPlanosAlertas(travasAtual, travasPrev, periodoMes, periodoPrev);
 }
 
 /********************** CELEBRAÇÃO: modal + fogos **********************/
@@ -663,7 +662,7 @@ function renderVendasDia(data){
   else { chartDia = new Chart(ctx, { type:'line', data: ds, options:{ responsive:true, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } } }); }
 }
 
-/********************** RENDER – CANCELAMENTOS (pizza colorida + lista) *************************/
+/********************** RENDER – CANCELAMENTOS *************************/
 let chartCanc;
 function renderCancelamentos(data){
   const total = data?.total ?? (Array.isArray(data?.itens) ? data.itens.reduce((s,i)=>s+parseBR(i.total??i.valor??0),0) : 0);
@@ -747,6 +746,7 @@ function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
       rows.push({ nome, atual: vAtual, anterior: vPrev, perc: p });
     }
   }
+  // pode ordenar por % ou valor; aqui mantive por % (se quiser por valor, troque para: b.atual-b.anterior - (a.atual-a.anterior))
   rows.sort((a,b)=> b.perc - a.perc);
 
   const tbody = document.querySelector('#tblPlanos tbody');
@@ -768,7 +768,7 @@ function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
   });
 }
 
-/********************** RENDER – TRAVAS (duas linhas no card + barras) *************************/
+/********************** RENDER – TRAVAS *************************/
 function renderTravas(data){
   const travaTotal = parseBR(data?.travaTotal ?? data?.trava_total ?? 0);
   const travaFor   = parseBR(data?.travaCompras ?? data?.trava_compras ?? data?.travaFornec ?? 0);
