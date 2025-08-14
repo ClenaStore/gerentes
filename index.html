@@ -64,9 +64,9 @@
     .spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#7cb8ff;animation:spin 0.9s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* Lista com rolagem invisível (Cancelamentos) */
-    .canc-list{max-height:220px;overflow:auto;padding-right:6px;scrollbar-width:none;-ms-overflow-style:none}
-    .canc-list::-webkit-scrollbar{width:0;height:0}
+    /* Rolagem invisível (Cancelamentos/Planos) */
+    .canc-list,.planos-list{max-height:220px;overflow:auto;padding-right:6px;scrollbar-width:none;-ms-overflow-style:none}
+    .canc-list::-webkit-scrollbar,.planos-list::-webkit-scrollbar{width:0;height:0}
     
     @media (max-width: 980px){
       .grid{grid-template-columns:1fr}
@@ -184,7 +184,6 @@
             <canvas id="chartCanc" height="160"></canvas>
           </div>
           <div style="flex:1">
-            <!-- LISTA COM ROLAGEM INVISÍVEL -->
             <div class="canc-list">
               <table class="table" id="tblCanc">
                 <thead><tr><th>Item</th><th>Total</th></tr></thead>
@@ -195,8 +194,26 @@
         </div>
       </section>
 
+      <!-- NOVO: Planos de Contas (Alertas 80%+) ao lado de Cancelamentos -->
       <section class="card panel section">
-        <h3>4) Travas de Compras</h3>
+        <h3>4) Planos de Contas — Alertas (≥80% vs mês anterior) <span class="badge" id="planosBadge">—</span></h3>
+        <div class="planos-list">
+          <table class="table" id="tblPlanos">
+            <thead>
+              <tr>
+                <th>Plano</th>
+                <th>Mês atual</th>
+                <th>Mês anterior</th>
+                <th>Progresso</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card panel section">
+        <h3>5) Travas de Compras</h3>
         <div id="travasWrap" class="row" style="flex-direction:column;align-items:stretch;gap:12px"></div>
       </section>
     </div>
@@ -239,7 +256,7 @@ const PLANOS_VALIDOS = new Set([
 ]);
 
 /********************** ESTADO *************************/
-const state = { empresa:null, periodo:{inicio:null,fim:null}, data:{ metas:null, vendasDia:null, cancelamentos:null, travas:null } };
+const state = { empresa:null, periodo:{inicio:null,fim:null}, data:{ metas:null, vendasDia:null, cancelamentos:null, travasAtual:null, travasPrev:null } };
 let _vendasPrimeiroCarregamento = true; // últimos 7 dias (vendas)
 let _cancPrimeiroCarregamento   = true; // últimos 7 dias (cancelamentos)
 
@@ -274,6 +291,15 @@ function fmtBR(iso){
   if (isNaN(d)) return iso;
   return d.toLocaleDateString('pt-BR');
 }
+function fmtYM(ym){ if(!ym) return '—'; const [y,m]=ym.split('-'); return `${m}/${y}`; }
+function prevMonthYM(ym){
+  if(!ym || ym.length<7) return '';
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y, (m-1)-1, 1); // mês anterior
+  const yy = d.getFullYear();
+  const mm = ('0'+(d.getMonth()+1)).slice(-2);
+  return `${yy}-${mm}`;
+}
 
 /* === Helpers de calendário para projeção (PREVISÃO) === */
 function _dayOfMonth(iso){ const d = new Date(iso+'T00:00:00'); return isNaN(d)? 0 : d.getDate(); }
@@ -288,13 +314,11 @@ function calcularPrevisaoMensal(periodoISO, realizadoAteHoje){
 const loginOverlay = $('#loginOverlay');
 const loadingOverlay = $('#loadingOverlay');
 $('#entrarBtn').addEventListener('click', ()=>doLogin());
-/* ENTER para logar */
 $('#senhaInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
 $('#empresaSelect').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
 document.addEventListener('keydown', (e)=>{ 
   if (loginOverlay.style.display !== 'none' && e.key === 'Enter') doLogin(); 
 });
-/* demais botões */
 $('#verEmpresas').addEventListener('click', ()=> alert('Empresas habilitadas: '+Object.keys(COMPANY_PASSWORDS).join(', ')) );
 $('#btnSair').addEventListener('click', ()=>{ loginOverlay.style.display='flex'; state.empresa=null; setBadgeEmpresa('—'); });
 
@@ -424,7 +448,7 @@ async function refreshAll(){
         const fim = todayISO();
         const inicio = addDaysISO(fim, -6); // janela de 7 dias
         cancelamentos = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, { empresa: state.empresa, inicio, fim }));
-        cancelamentos.inicio = inicio; cancelamentos.fim = fim; // para o subtítulo
+        cancelamentos.inicio = inicio; cancelamentos.fim = fim;
         _cancPrimeiroCarregamento = false;
       } else {
         cancelamentos = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, { empresa: state.empresa, inicio: state.periodo.inicio, fim: state.periodo.fim }));
@@ -433,18 +457,22 @@ async function refreshAll(){
     }catch(e){ cancelamentos = null; _cancPrimeiroCarregamento=false; }
   }
 
-  // TRAVAS — usa o MESMO endpoint do painel de travas (periodo=YYYY-MM)
+  // TRAVAS — mês atual + mês anterior
   const periodoMes = (state.periodo.fim || todayISO()).slice(0,7);
-  const travas = ENDPOINTS.TRAVAS
-    ? await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa: state.empresa, periodo: periodoMes })).catch(()=>null)
-    : null;
+  const periodoPrev = prevMonthYM(periodoMes);
+  let travasAtual = null, travasPrev = null;
+  if (ENDPOINTS.TRAVAS){
+    try { travasAtual = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa: state.empresa, periodo: periodoMes })); } catch(e){ travasAtual = null; }
+    try { travasPrev  = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa: state.empresa, periodo: periodoPrev })); } catch(e){ travasPrev = null; }
+  }
 
-  state.data = { metas, vendasDia, cancelamentos, travas };
+  state.data = { metas, vendasDia, cancelamentos, travasAtual, travasPrev };
 
   renderMetas(metas);
   renderVendasDia(vendasDia);
   renderCancelamentos(cancelamentos);
-  renderTravas(travas);
+  renderPlanosAlertas(travasAtual, travasPrev, periodoMes, periodoPrev);
+  renderTravas(travasAtual);
 }
 
 /********************** CELEBRAÇÃO: modal + fogos **********************/
@@ -492,60 +520,38 @@ const cele = {
     const now = performance.now();
     const ctx = this.ctx;
 
-    // fundo translúcido para "rastro"
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(0,0,this.W,this.H);
 
-    // lançar foguetes periodicamente
     if(!this._last) this._last = now;
     const dt = (now - this._last) / 1000;
     this._last = now;
     this._spawnTimer += dt;
     if(this._spawnTimer > 0.4){
       this._spawnTimer = 0;
-      // lança 1–3 foguetes
       const n = 1 + Math.floor(Math.random()*3);
-      for(let i=0;i<n;i++){
-        this.launchRocket();
-      }
+      for(let i=0;i<n;i++){ this.launchRocket(); }
     }
 
-    // atualizar foguetes
     for(let i=this.rockets.length-1;i>=0;i--){
       const r = this.rockets[i];
-      r.vy += 20 * dt; // gravidade leve
+      r.vy += 20 * dt;
       r.x += r.vx * dt;
       r.y += r.vy * dt;
       r.life -= dt;
-      // desenha
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, 2, 0, Math.PI*2);
-      ctx.fillStyle = r.color;
-      ctx.fill();
-      // explode
-      if(r.life <= 0 || r.vy > 0){
-        this.explode(r.x, r.y, r.color);
-        this.rockets.splice(i,1);
-      }
+      ctx.beginPath(); ctx.arc(r.x, r.y, 2, 0, Math.PI*2); ctx.fillStyle = r.color; ctx.fill();
+      if(r.life <= 0 || r.vy > 0){ this.explode(r.x, r.y, r.color); this.rockets.splice(i,1); }
     }
 
-    // atualizar partículas
     for(let i=this.particles.length-1;i>=0;i--){
       const p = this.particles[i];
-      p.vy += 80 * dt;
-      p.vx *= 0.98; p.vy *= 0.98;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
+      p.vy += 80 * dt; p.vx *= 0.98; p.vy *= 0.98;
+      p.x += p.vx * dt; p.y += p.vy * dt;
       p.alpha -= p.fade * dt;
-      // desenha
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${Math.max(p.alpha,0)})`;
-      ctx.fill();
-
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${Math.max(p.alpha,0)})`; ctx.fill();
       if(p.alpha <= 0 || p.y > this.H+20) this.particles.splice(i,1);
     }
-
     this.raf = requestAnimationFrame(()=>this.loop());
   },
   launchRocket(){
@@ -558,7 +564,6 @@ const cele = {
     this.rockets.push({x,y,vx,vy,life:0.8+Math.random()*0.6,color});
   },
   explode(x,y,color){
-    // converte cor hsl para rgb aproximado desenhando uma vez
     const tmp = document.createElement('canvas').getContext('2d');
     tmp.fillStyle = color; tmp.fillRect(0,0,1,1);
     const [r,g,b] = tmp.getImageData(0,0,1,1).data;
@@ -579,8 +584,6 @@ const cele = {
     }
   }
 };
-
-// fechar modal (botão, fundo, ESC)
 document.getElementById('celeClose').addEventListener('click', ()=> cele.stop());
 document.getElementById('celeBack').addEventListener('click', ()=> cele.stop());
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') cele.stop(); });
@@ -589,14 +592,11 @@ function maybeCelebrate(pReal, empresa, periodo, meta, realizado){
   if(!(pReal>=100) || !empresa || !periodo) return;
   const ym = String(periodo).slice(0,7) || 'mes';
   const key = `cele:${empresa}|${ym}`;
-  if(sessionStorage.getItem(key)) return; // evita repetir no mesmo mês/empresa
-
+  if(sessionStorage.getItem(key)) return;
   const titulo = 'Meta atingida! 🎉';
   const subt = `Realizado de ${CURRENCY.format(realizado)} sobre meta de ${CURRENCY.format(meta)} (${pReal.toFixed(1)}%). Excelente!`;
   cele.start(titulo, subt);
   sessionStorage.setItem(key,'1');
-
-  // encerra sozinho após 10s caso o usuário não feche
   setTimeout(()=>cele.stop(), 10000);
 }
 
@@ -618,7 +618,6 @@ function renderMetas(data){
     `<br>Previsão ${CURRENCY.format(previsao)} — ` +
     `<span class="pill ${pPrev>=100?'ok':pPrev>=80?'neutral':'bad'}">${pPrev.toFixed(1)}%</span>`;
 
-  // dispara fogos se atingiu 100%+
   if(meta>0) maybeCelebrate(pReal, state.empresa, periodo, meta, realizado);
 
   const ctx = document.getElementById('chartMetas');
@@ -675,7 +674,6 @@ function renderCancelamentos(data){
   const subPeriodo = (data?.inicio || data?.fim) ? ` — ${fmtBR(data.inicio||'')} a ${fmtBR(data.fim||'')}` : '';
   $('#kpiCancSub').innerHTML = `${CURRENCY.format(total)} no período${subPeriodo} — <span class="pill ${pc<3?'ok':pc<8?'neutral':'bad'}">${pc.toFixed(1)}%</span>`;
 
-  // *** Pizza por ITENS (top 6). Se não houver itens, cai para motivos. ***
   let labels = [], valores = [];
   if (Array.isArray(data?.itens) && data.itens.length){
     const itens = data.itens.map(it => ({ nome: it.nome||it.item||'—', total: parseBR(it.total ?? it.valor) }));
@@ -703,7 +701,6 @@ function renderCancelamentos(data){
   if(chartCanc){ chartCanc.data = ds; chartCanc.update(); }
   else { chartCanc = new Chart(ctx, { type:'doughnut', data: ds, options:{ responsive:true, plugins:{ legend:{position:'bottom'} } } }); }
 
-  // lista de itens — ordenar do mais caro para o mais barato
   const tbody = document.querySelector('#tblCanc tbody');
   tbody.innerHTML='';
   const itensList = Array.isArray(data?.itens) ? data.itens.map(it => ({ nome: it.nome||it.item||'—', total: parseBR(it.total ?? it.valor) })) : [];
@@ -715,13 +712,67 @@ function renderCancelamentos(data){
   });
 }
 
+/********************** AUX: extrair mapa de planos (nome -> valor absoluto) *************************/
+function extractPlanosMap(payload){
+  const map = new Map();
+  if(!payload) return map;
+  const pools = [];
+  if (Array.isArray(payload.planosFonte9)) pools.push(payload.planosFonte9);
+  if (Array.isArray(payload.planos)) pools.push(payload.planos);
+  if (Array.isArray(payload.contas)) pools.push(payload.contas);
+  if (Array.isArray(payload.planosContabeis)) pools.push(payload.planosContabeis);
+  (pools.flat() || []).forEach(it=>{
+    const nome = String(it?.nome || it?.plano || it?.conta || it?.descricao || '—').trim();
+    if(!nome || nome==='—') return;
+    const v = Math.abs(parseBR(it?.valor ?? it?.total ?? it?.soma ?? 0));
+    map.set(nome, (map.get(nome)||0) + v);
+  });
+  return map;
+}
+
+/********************** RENDER – PLANOS (alertas 80%+ vs mês anterior) *************************/
+function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
+  const badge = document.getElementById('planosBadge');
+  badge.textContent = `${fmtYM(ymAtual)} vs ${fmtYM(ymPrev)}`;
+
+  const curr = extractPlanosMap(travasAtual);
+  const prev = extractPlanosMap(travasPrev);
+
+  const rows = [];
+  for (const [nome, vAtual] of curr.entries()){
+    const vPrev = prev.get(nome) || 0;
+    if (vPrev <= 0) continue;
+    const p = (vAtual / vPrev) * 100;
+    if (p >= 80){
+      rows.push({ nome, atual: vAtual, anterior: vPrev, perc: p });
+    }
+  }
+  rows.sort((a,b)=> b.perc - a.perc);
+
+  const tbody = document.querySelector('#tblPlanos tbody');
+  tbody.innerHTML = '';
+  if (!rows.length){
+    tbody.innerHTML = `<tr><td colspan="4"><div class="badge">Sem alertas — todos abaixo de 80% do mês anterior.</div></td></tr>`;
+    return;
+  }
+  rows.forEach(r=>{
+    const cls = r.perc>=100 ? 'bad' : 'neutral';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>📌 ${r.nome}</td>
+      <td style="white-space:nowrap">${CURRENCY.format(r.atual)}</td>
+      <td style="white-space:nowrap">${CURRENCY.format(r.anterior)}</td>
+      <td><span class="pill ${cls}">${r.perc.toFixed(0)}%</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 /********************** RENDER – TRAVAS (duas linhas no card + barras) *************************/
 function renderTravas(data){
-  // limites
   const travaTotal = parseBR(data?.travaTotal ?? data?.trava_total ?? 0);
   const travaFor   = parseBR(data?.travaCompras ?? data?.trava_compras ?? data?.travaFornec ?? 0);
 
-  // gastos (preferir agregados; fallback: somar planosFonte9)
   let gastoGeral = parseBR(data?.gastoGeral ?? data?.totalFonte9 ?? data?.fonte9Total ?? 0);
   let gastoFor   = parseBR(data?.gastoFornec ?? data?.fornecedoresComprado ?? 0);
 
@@ -735,14 +786,12 @@ function renderTravas(data){
   const pFor   = pct(gastoFor,   travaFor);
   const pill = (p)=>`<span class="pill ${p>100?'bad':p>80?'neutral':'ok'}">${p.toFixed(1)}%</span>`;
 
-  // KPI principal (mostra 2 linhas)
   $('#kpiTrava').textContent = CURRENCY.format(gastoGeral);
   $('#kpiTravaSub').innerHTML = (travaTotal||travaFor) ? `
     Geral: <b>${CURRENCY.format(gastoGeral)}</b> de ${CURRENCY.format(travaTotal)} — ${pill(pTotal)}<br>
     Fornecedores: <b>${CURRENCY.format(gastoFor)}</b> de ${CURRENCY.format(travaFor)} — ${pill(pFor)}
   ` : '—';
 
-  // barras da seção
   const wrap = document.getElementById('travasWrap');
   wrap.innerHTML = '';
   if (travaTotal || gastoGeral || travaFor || gastoFor){
