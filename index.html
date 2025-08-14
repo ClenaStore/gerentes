@@ -41,7 +41,7 @@
     .table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
     .pill{padding:2px 8px;border-radius:999px;font-weight:700;font-size:11px}
     .ok{background:rgba(119,224,181,.15);color:#b8fbe2;border:1px solid rgba(119,224,181,.3)}
-    .bad{background:rgba(255,107,107,.15);color:#ffd0d0;border:1px solid rgba(255,107,107,.35)}
+    .bad{background:rgba(255,107,107,.15);color:#ffd0d0;border:1px solid rgba(255,255,255,.35)}
     .neutral{background:rgba(124,184,255,.15);color:#dcebff;border:1px solid rgba(124,184,255,.3)}
 
     /* Overlays */
@@ -64,7 +64,7 @@
     .spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#7cb8ff;animation:spin 0.9s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* ----- Lista com rolagem invisível (Cancelamentos) ----- */
+    /* Lista com rolagem invisível (Cancelamentos) */
     .canc-list{max-height:220px;overflow:auto;padding-right:6px;scrollbar-width:none;-ms-overflow-style:none}
     .canc-list::-webkit-scrollbar{width:0;height:0}
     
@@ -72,6 +72,21 @@
       .grid{grid-template-columns:1fr}
       .kpis{grid-template-columns:repeat(2,1fr)}
     }
+
+    /* ===== CELEBRAÇÃO (modal + fogos) ===== */
+    #celeOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:120}
+    #celeOverlay.show{display:flex}
+    #celeOverlay .back{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+    #celeCanvas{position:absolute;inset:0;display:block}
+    .cele-card{
+      position:relative; z-index:2; text-align:center; padding:18px 20px; border-radius:16px;
+      background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.2); box-shadow:0 10px 30px rgba(0,0,0,.35); max-width:min(560px,92vw)
+    }
+    .cele-title{font-weight:900;font-size:22px;letter-spacing:.3px;margin:0 0 8px}
+    .cele-sub{color:#cfe3ff;margin:0 0 12px}
+    .cele-btn{background:linear-gradient(90deg,#3e8eff,#6de2c8);color:#0b1020;border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
+    .cele-emoji{font-size:20px;margin-left:6px}
   </style>
 </head>
 <body>
@@ -114,6 +129,17 @@
     <div class="loader-wrap">
       <div class="spinner"></div>
       <div class="badge">Carregando dados…</div>
+    </div>
+  </div>
+
+  <!-- Overlay de CELEBRAÇÃO -->
+  <div id="celeOverlay" aria-hidden="true">
+    <div class="back" id="celeBack"></div>
+    <canvas id="celeCanvas"></canvas>
+    <div class="cele-card" role="dialog" aria-modal="true" aria-labelledby="celeTitle">
+      <h3 id="celeTitle" class="cele-title">Meta atingida! 🎉</h3>
+      <p id="celeSub" class="cele-sub">Parabéns, você bateu 100% da meta deste período.</p>
+      <button id="celeClose" class="cele-btn">Fechar <span class="cele-emoji">🚀</span></button>
     </div>
   </div>
 
@@ -332,7 +358,7 @@ function pickUltimaMeta(records, empresa){
   if(!validos.length) return { metaMensal:0, realizado:0, periodo:'-' };
   const ultimaData = validos.reduce((m,r)=> r.Data>m? r.Data : m, validos[0].Data);
   const rec = validos.find(r=>r.Data===ultimaData) || validos[validos.length-1];
-  return { metaMensal: parseBR(rec.Previsto), realizado: parseBR(rec.Realizado), periodo: ultimaData };
+  return { metaMensal: parseBR(rec.Previsto), realizado: parseBR(rec.Realizado), periodo: rec.Data };
 }
 
 /********************** BUSCA DE DADOS *************************/
@@ -421,7 +447,160 @@ async function refreshAll(){
   renderTravas(travas);
 }
 
-/********************** RENDER – METAS (com PREVISÃO) *************************/
+/********************** CELEBRAÇÃO: modal + fogos **********************/
+const cele = {
+  el: $('#celeOverlay'),
+  back: $('#celeBack'),
+  closeBtn: $('#celeClose'),
+  title: $('#celeTitle'),
+  sub: $('#celeSub'),
+  cvs: document.getElementById('celeCanvas'),
+  ctx: null,
+  W: 0, H: 0,
+  running: false,
+  raf: 0,
+  rockets: [],
+  particles: [],
+  start(titulo, subtitulo){
+    if(this.running) return;
+    this.title.textContent = titulo || 'Meta atingida! 🎉';
+    this.sub.textContent = subtitulo || 'Parabéns, você bateu 100% da meta deste período.';
+    this.el.classList.add('show');
+    this.ctx = this.cvs.getContext('2d');
+    const resize = ()=>{
+      this.W = this.cvs.width = window.innerWidth;
+      this.H = this.cvs.height = window.innerHeight;
+    };
+    this._resize = resize;
+    resize();
+    window.addEventListener('resize', resize);
+    this.running = true;
+    this._spawnTimer = 0;
+    this.loop();
+  },
+  stop(){
+    if(!this.running) return;
+    this.running = false;
+    cancelAnimationFrame(this.raf);
+    window.removeEventListener('resize', this._resize);
+    this.el.classList.remove('show');
+    this.rockets.length = 0; this.particles.length = 0;
+    this.ctx && this.ctx.clearRect(0,0,this.W,this.H);
+  },
+  loop(){
+    if(!this.running) return;
+    const now = performance.now();
+    const ctx = this.ctx;
+
+    // fundo translúcido para "rastro"
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(0,0,this.W,this.H);
+
+    // lançar foguetes periodicamente
+    if(!this._last) this._last = now;
+    const dt = (now - this._last) / 1000;
+    this._last = now;
+    this._spawnTimer += dt;
+    if(this._spawnTimer > 0.4){
+      this._spawnTimer = 0;
+      // lança 1–3 foguetes
+      const n = 1 + Math.floor(Math.random()*3);
+      for(let i=0;i<n;i++){
+        this.launchRocket();
+      }
+    }
+
+    // atualizar foguetes
+    for(let i=this.rockets.length-1;i>=0;i--){
+      const r = this.rockets[i];
+      r.vy += 20 * dt; // gravidade leve
+      r.x += r.vx * dt;
+      r.y += r.vy * dt;
+      r.life -= dt;
+      // desenha
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 2, 0, Math.PI*2);
+      ctx.fillStyle = r.color;
+      ctx.fill();
+      // explode
+      if(r.life <= 0 || r.vy > 0){
+        this.explode(r.x, r.y, r.color);
+        this.rockets.splice(i,1);
+      }
+    }
+
+    // atualizar partículas
+    for(let i=this.particles.length-1;i>=0;i--){
+      const p = this.particles[i];
+      p.vy += 80 * dt;
+      p.vx *= 0.98; p.vy *= 0.98;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.alpha -= p.fade * dt;
+      // desenha
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${Math.max(p.alpha,0)})`;
+      ctx.fill();
+
+      if(p.alpha <= 0 || p.y > this.H+20) this.particles.splice(i,1);
+    }
+
+    this.raf = requestAnimationFrame(()=>this.loop());
+  },
+  launchRocket(){
+    const x = Math.random() * this.W * 0.8 + this.W*0.1;
+    const y = this.H + 10;
+    const vx = (Math.random()-0.5) * 60;
+    const vy = - (180 + Math.random()*140);
+    const hue = Math.floor(Math.random()*360);
+    const color = `hsl(${hue}, 80%, 60%)`;
+    this.rockets.push({x,y,vx,vy,life:0.8+Math.random()*0.6,color});
+  },
+  explode(x,y,color){
+    // converte cor hsl para rgb aproximado desenhando uma vez
+    const tmp = document.createElement('canvas').getContext('2d');
+    tmp.fillStyle = color; tmp.fillRect(0,0,1,1);
+    const [r,g,b] = tmp.getImageData(0,0,1,1).data;
+
+    const count = 60 + Math.floor(Math.random()*40);
+    for(let i=0;i<count;i++){
+      const ang = Math.random()*Math.PI*2;
+      const spd = 60 + Math.random()*220;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(ang)*spd,
+        vy: Math.sin(ang)*spd,
+        r, g, b,
+        size: 1.5 + Math.random()*1.5,
+        alpha: 1,
+        fade: 0.6 + Math.random()*0.8
+      });
+    }
+  }
+};
+
+// fechar modal (botão, fundo, ESC)
+document.getElementById('celeClose').addEventListener('click', ()=> cele.stop());
+document.getElementById('celeBack').addEventListener('click', ()=> cele.stop());
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') cele.stop(); });
+
+function maybeCelebrate(pReal, empresa, periodo, meta, realizado){
+  if(!(pReal>=100) || !empresa || !periodo) return;
+  const ym = String(periodo).slice(0,7) || 'mes';
+  const key = `cele:${empresa}|${ym}`;
+  if(sessionStorage.getItem(key)) return; // evita repetir no mesmo mês/empresa
+
+  const titulo = 'Meta atingida! 🎉';
+  const subt = `Realizado de ${CURRENCY.format(realizado)} sobre meta de ${CURRENCY.format(meta)} (${pReal.toFixed(1)}%). Excelente!`;
+  cele.start(titulo, subt);
+  sessionStorage.setItem(key,'1');
+
+  // encerra sozinho após 10s caso o usuário não feche
+  setTimeout(()=>cele.stop(), 10000);
+}
+
+/********************** RENDER – METAS (com PREVISÃO + CELEBRAÇÃO) *************************/
 let chartMetas;
 function renderMetas(data){
   const meta = data?.metaMensal ?? 0;
@@ -438,6 +617,9 @@ function renderMetas(data){
     `<span class="pill ${pReal>=100?'ok':pReal>=80?'neutral':'bad'}">${pReal.toFixed(1)}%</span>` +
     `<br>Previsão ${CURRENCY.format(previsao)} — ` +
     `<span class="pill ${pPrev>=100?'ok':pPrev>=80?'neutral':'bad'}">${pPrev.toFixed(1)}%</span>`;
+
+  // dispara fogos se atingiu 100%+
+  if(meta>0) maybeCelebrate(pReal, state.empresa, periodo, meta, realizado);
 
   const ctx = document.getElementById('chartMetas');
   const ds = {
