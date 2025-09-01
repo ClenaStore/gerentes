@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- NOVO: libs para exportar PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
     :root{
       --bg:#0b1020; --panel:#111834; --muted:#8ea0c7; --card:#0f1530; --accent:#77e0b5; --accent2:#7cb8ff; --warn:#ffb84d; --danger:#ff6b6b;
@@ -89,6 +94,14 @@
     .cele-sub{color:#cfe3ff;margin:0 0 12px}
     .cele-btn{background:linear-gradient(90deg,#3e8eff,#6de2c8);color:#0b1020;border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
     .cele-emoji{font-size:20px;margin-left:6px}
+
+    /* ====== ESTILOS PARA PDF (opcional se usar imprimir) ====== */
+    @media print{
+      /* Oculta overlays e barra de controle no print nativo */
+      #loginOverlay, #loadingOverlay, #celeOverlay, .toolbar button, #btnCSV, #btnPDF, #empresaSwitcher, #btnSair { display:none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .wrap { padding: 12mm; }
+    }
   </style>
 </head>
 <body>
@@ -227,6 +240,8 @@
     <div class="row" style="margin-top:16px;justify-content:flex-end">
       <button class="btn" id="btnCSV">Exportar CSV</button>
       <button class="btn" id="btnPDF">Exportar PDF</button>
+      <!-- Se quiser voltar ao comportamento antigo de impressão:
+      <button class="btn" onclick="window.print()">Imprimir</button> -->
     </div>
   </div>
 
@@ -409,7 +424,11 @@ $('#btnCSV').addEventListener('click', ()=>{
   const blob = new Blob([toCSV(rows)], {type:'text/csv;charset=utf-8;'}); const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = `painel_${(state.empresa||'empresa').replaceAll(' ','_')}.csv`; a.click();
 });
-$('#btnPDF').addEventListener('click', ()=>{ window.print(); });
+
+/* ===== NOVO: Exportar PDF real (com paginação, header e footer) ===== */
+document.getElementById('btnPDF').addEventListener('click', async ()=>{ 
+  await exportPDF();
+});
 
 /********************** PARSE – METAS *************************/
 function normalizeMetasPayload(raw){
@@ -785,6 +804,108 @@ function renderTravas(data){
   } else {
     wrap.innerHTML = '<div class="badge">Sem dados de travas para o período.</div>';
   }
+}
+
+/********************** NOVO – EXPORTAR PDF *************************/
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+
+  // Garante que os gráficos estejam estáticos antes da captura
+  try {
+    if (window.Chart) {
+      Chart.registry?.plugins?.getAll?.().forEach(()=>{});
+      Chart.helpers.each(Chart.instances, function(chart){
+        if (chart && typeof chart.update === 'function') chart.update(0);
+      });
+    }
+  } catch(e){ /* segue mesmo assim */ }
+
+  // Esconde overlays durante a captura
+  const hideElems = [ '#loginOverlay', '#loadingOverlay', '#celeOverlay' ];
+  const prevDisplay = new Map();
+  hideElems.forEach(sel=>{
+    const el = document.querySelector(sel);
+    if (el){
+      prevDisplay.set(el, el.style.display);
+      el.style.display = 'none';
+    }
+  });
+
+  const painel = document.getElementById('painel');
+
+  // Cabeçalho/rodapé para o PDF
+  const empresaTxt  = (state.empresa || '—') + (state.isAdmin ? ' (ADM)' : '');
+  const periodoTxt  = `${fmtBR(state.periodo.inicio)||'—'} a ${fmtBR(state.periodo.fim)||'—'}`;
+  const geradoEm    = new Date().toLocaleString('pt-BR');
+
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+
+  // Captura do DOM em alta resolução
+  const canvas = await html2canvas(painel, {
+    backgroundColor: '#0b1020',
+    scale: window.devicePixelRatio > 1 ? 2 : 1.8,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    windowWidth: document.documentElement.scrollWidth,
+    windowHeight: document.documentElement.scrollHeight
+  });
+
+  // Restaura overlays
+  hideElems.forEach(sel=>{
+    const el = document.querySelector(sel);
+    if (el && prevDisplay.has(el)) el.style.display = prevDisplay.get(el);
+  });
+
+  const imgData = canvas.toDataURL('image/png');
+  const imgW = pageW; // preencher a largura
+  const imgH = canvas.height * imgW / canvas.width;
+
+  let heightLeft = imgH;
+  let position = 0;
+
+  // Funções de header/footer
+  function drawHeaderFooter(pageNumber, totalPagesGuess){
+    // Header
+    pdf.setFillColor(11,16,32); // barra discreta
+    pdf.rect(0, 0, pageW, 12, 'F');
+
+    pdf.setTextColor(190, 221, 255);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
+    pdf.text('PAINEL DO GESTOR — GRUPO DV', 6, 8);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
+    pdf.text(`Empresa: ${empresaTxt}`, pageW/2, 8, { align:'center' });
+    pdf.text(`Período: ${periodoTxt} • Gerado em: ${geradoEm}`, pageW-6, 8, { align:'right' });
+
+    // Footer
+    pdf.setDrawColor(80, 100, 150);
+    pdf.setLineWidth(0.2); pdf.line(6, pageH-10, pageW-6, pageH-10);
+    pdf.setTextColor(200, 210, 230);
+    pdf.setFontSize(9);
+    pdf.text(`© ${new Date().getFullYear()} Grupo DV — Relatório do Painel`, 6, pageH-5);
+    pdf.text(`Página ${pageNumber}${totalPagesGuess ? ' de ' + totalPagesGuess : ''}`, pageW-6, pageH-5, { align:'right' });
+  }
+
+  // Primeira página
+  pdf.addImage(imgData, 'PNG', 0, position + 12, imgW, imgH); // +12 para não cobrir header
+  drawHeaderFooter(1);
+
+  heightLeft -= pageH - 12; // desconta área útil abaixo do header
+
+  let page = 2;
+  while (heightLeft > 0) {
+    pdf.addPage();
+    position = - (imgH - heightLeft);
+    pdf.addImage(imgData, 'PNG', 0, position + 12, imgW, imgH);
+    drawHeaderFooter(page);
+    heightLeft -= pageH - 12;
+    page++;
+  }
+
+  const nomeArquivo = `Relatorio_${(state.empresa||'Empresa').replaceAll(' ','_')}_${(state.periodo.inicio||'')}_${(state.periodo.fim||'')}.pdf`;
+  pdf.save(nomeArquivo);
 }
 
 /********************** INICIALIZAÇÃO *************************/
