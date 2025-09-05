@@ -8,11 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- NOVO: libs para exportar PDF -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
   <style>
     :root{
       --bg:#0b1020; --panel:#111834; --muted:#8ea0c7; --card:#0f1530; --accent:#77e0b5; --accent2:#7cb8ff; --warn:#ffb84d; --danger:#ff6b6b;
@@ -20,7 +17,6 @@
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#e9eeff;background:linear-gradient(180deg,#0b1020,#0b0f1c);} 
     html, body { height: 100%; }
-
     .wrap{max-width:none;width:100%;min-height:100vh;margin:0;padding:20px 16px 56px}
     header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin:8px 0 20px}
     .title{font-weight:800;font-size:20px;letter-spacing:.2px}
@@ -50,10 +46,10 @@
     .ok{background:rgba(119,224,181,.15);color:#b8fbe2;border:1px solid rgba(119,224,181,.3)}
     .bad{background:rgba(255,107,107,.15);color:#ffd0d0;border:1px solid rgba(255,255,255,.35)}
     .neutral{background:rgba(124,184,255,.15);color:#dcebff;border:1px solid rgba(124,184,255,.3)}
-
     .chart-box{position:relative;height:32vh;min-height:240px}
     .chart-box.tall{height:38vh;min-height:260px}
 
+    /* Overlays */
     .overlay{position:fixed;inset:0;background:radial-gradient(1200px 600px at 70% -10%,rgba(76,133,255,.25),transparent 60%),
                                    radial-gradient(1000px 600px at -10% 40%,rgba(119,224,181,.15),transparent 60%),
                                    #0b1020f2;display:flex;align-items:center;justify-content:center;z-index:99}
@@ -64,25 +60,13 @@
     .login .field label{font-size:12px;color:#cfe3ff}
     .login .hint{font-size:11px;color:var(--muted)}
     .lock{display:inline-flex;width:36px;height:36px;border-radius:12px;align-items:center;justify-content:center;background:rgba(255,255,255,.06);margin-right:8px}
-    .notice{font-size:12px;color:#var(--muted)}
     .err{color:#ffd0d0}
-
     #loadingOverlay{display:none}
     .loader-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;background:#0b1020e6;padding:20px 24px;border-radius:16px;border:1px solid rgba(255,255,255,.08)}
     .spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#7cb8ff;animation:spin 0.9s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    .canc-list,.planos-list{max-height:480px;overflow:auto;padding-right:6px;scrollbar-width:none;-ms-overflow-style:none}
-    .canc-list::-webkit-scrollbar,.planos-list::-webkit-scrollbar{width:0;height:0}
-    
-    @media (max-width: 980px){
-      .grid{grid-template-columns:1fr}
-      .kpis{grid-template-columns:repeat(2,1fr)}
-      .chart-box{height:36vh}
-      .chart-box.tall{height:42vh}
-    }
-
-    /* CELEBRAÇÃO */
+    /* Celebracao */
     #celeOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:120}
     #celeOverlay.show{display:flex}
     #celeOverlay .back{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
@@ -95,48 +79,52 @@
     .cele-btn{background:linear-gradient(90deg,#3e8eff,#6de2c8);color:#0b1020;border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
     .cele-emoji{font-size:20px;margin-left:6px}
 
-    /* ====== ESTILOS PARA PDF (opcional se usar imprimir) ====== */
+    /* PDF print */
     @media print{
-      /* Oculta overlays e barra de controle no print nativo */
-      #loginOverlay, #loadingOverlay, #celeOverlay, .toolbar button, #btnCSV, #btnPDF, #empresaSwitcher, #btnSair { display:none !important; }
+      #loginOverlay, #loadingOverlay, #celeOverlay, .toolbar button, #btnCSV, #btnPDF, #empresaMultiWrap, #btnSair { display:none !important; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .wrap { padding: 12mm; }
     }
+
+    /* ===== Dropdown multi-seleção ===== */
+    #empresaMultiWrap{position:relative}
+    #empresaMultiBtn{display:flex;align-items:center;gap:8px;min-width:240px}
+    #empresaDropdown{
+      position:absolute; top:110%; left:0; z-index:30; min-width:280px;
+      background:#0e1431; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;
+      box-shadow:0 14px 30px rgba(0,0,0,.35); display:none; max-height:320px; overflow:auto;
+    }
+    #empresaDropdown.show{display:block}
+    #empresaDropdown .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    #empresaDropdown .search{width:100%;margin:6px 0 8px}
+    #empresaDropdown .item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:8px;cursor:pointer}
+    #empresaDropdown .item:hover{background:rgba(255,255,255,.05)}
+    #empresaDropdown .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:rgba(124,184,255,.15);border:1px solid rgba(124,184,255,.3);font-size:12px}
   </style>
 </head>
 <body>
-  <!-- LOGIN POR EMPRESA / ADM -->
+  <!-- LOGIN: agora SOMENTE ADMINISTRADOR -->
   <div class="overlay" id="loginOverlay">
     <div class="card login">
       <div class="row"><span class="lock">🔒</span><div>
-        <div class="badge">Acesso restrito por empresa e diretores</div>
+        <div class="badge">Acesso exclusivo do <b>ADMINISTRADOR</b></div>
         <h2>Entrar no Painel</h2>
-        <small>Selecione a empresa e digite a senha correspondente. Como <b>ADMINISTRADOR</b> você pode alternar de empresa sem sair.</small>
+        <small>Use a senha do <b>ADMINISTRADOR</b>. Depois escolha as empresas no menu suspenso.</small>
       </div></div>
-
       <div class="field">
-        <label>Empresa</label>
-        <select class="select" id="empresaSelect">
-          <option value="">Selecione…</option>
-          <option value="ADMINISTRADOR">DIRETOR (A)</option>
-          <option>MERCATTO DELÍCIA</option>
-          <option>DELÍCIA GOURMET</option>
-          <option>VILLA GOURMET</option>
-          <option>M. KIDS</option>
-          <option>PADARIA DELÍCIA</option>
-        </select>
+        <label>Usuário</label>
+        <input class="input" value="ADMINISTRADOR" disabled />
       </div>
       <div class="field">
-        <label>Senha</label>
+        <label>Senha do ADMINISTRADOR</label>
         <input id="senhaInput" class="input" type="password" placeholder="••••••••" />
-        <div class="hint">Esqueceu a senha? Entre em contato com o <code>ADM</code>.</div>
-        <div class="hint err" id="loginErr" style="display:none">Empresa ou senha inválidos.</div>
+        <div class="hint err" id="loginErr" style="display:none">Senha inválida.</div>
       </div>
-      <div class="row" style="justify-content:space-between;margin-top:6px">
-        <button class="btn ghost" id="verEmpresas">Ver empresas habilitadas</button>
+      <div class="row" style="justify-content:flex-end;margin-top:6px">
         <button class="btn primary" id="entrarBtn">Entrar</button>
       </div>
-      <p class="notice" style="margin-top:10px">⚠️ Este login é exclusivo para uso interno, é proíbido o acesso de terceiros.</p>
+      <p class="badge" style="margin-top:10px">Após entrar, clique em <b>Empresas</b> para selecionar (com flags) e ver os dados agrupados.</p>
     </div>
   </div>
 
@@ -166,7 +154,24 @@
         <div class="badge" id="empresaBadge">—</div>
       </div>
       <div class="toolbar">
-        <!-- seletor aparece apenas quando ADM -->
+        <!-- NOVO: Menu suspenso multi-seleção (mantém “como está” visualmente) -->
+        <div id="empresaMultiWrap">
+          <button class="btn" id="empresaMultiBtn">Empresas (0) ▾</button>
+          <div id="empresaDropdown" class="card">
+            <div class="head">
+              <div class="badge">Selecionar empresas</div>
+              <button class="btn ghost" id="btnSelectAll">Selecionar todas</button>
+            </div>
+            <input id="empresaSearch" class="input search" placeholder="Pesquisar empresa..." />
+            <div id="empresaList"></div>
+            <div class="foot">
+              <button class="btn" id="btnCancelarEmpresas">Cancelar</button>
+              <button class="btn primary" id="btnAplicarEmpresas">Aplicar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mantido um <select> oculto somente para compatibilidade, caso precise -->
         <select class="select" id="empresaSwitcher" style="display:none;min-width:220px"></select>
 
         <input type="date" class="input" id="dtInicio" />
@@ -213,14 +218,11 @@
         </div>
       </section>
 
-      <!-- ÚNICO CARD: Travas em cima + Lista de planos embaixo -->
       <section class="card panel section">
         <h3>4) Travas de Compras + Planos de Contas (≥80% do mês anterior) 
           <span class="badge" id="planosBadge">—</span>
         </h3>
-
         <div id="travasWrap" class="row" style="flex-direction:column;align-items:stretch;gap:12px;margin-bottom:10px"></div>
-
         <div class="planos-list">
           <table class="table" id="tblPlanos">
             <thead>
@@ -240,22 +242,11 @@
     <div class="row" style="margin-top:16px;justify-content:flex-end">
       <button class="btn" id="btnCSV">Exportar CSV</button>
       <button class="btn" id="btnPDF">Exportar PDF</button>
-      <!-- Se quiser voltar ao comportamento antigo de impressão:
-      <button class="btn" onclick="window.print()">Imprimir</button> -->
     </div>
   </div>
 
 <script>
 /********************** CONFIG *************************/
-const COMPANY_PASSWORDS = {
-  "MERCATTO DELÍCIA": "mercatto#2025",
-  "DELÍCIA GOURMET": "delicia#2025",
-  "VILLA GOURMET": "villa#2025",
-  "M. KIDS": "mkids#2025",
-  "PADARIA DELÍCIA": "padaria#2025"
-};
-
-// Usuário administrador
 const ADMIN = { NAME: "ADMINISTRADOR", PASSWORD: "adm#2025" };
 
 const ENDPOINTS = {
@@ -275,277 +266,369 @@ const PLANOS_VALIDOS = new Set([
 ]);
 
 /********************** ESTADO *************************/
-const state = { empresa:null, isAdmin:false, periodo:{inicio:null,fim:null}, data:{ metas:null, vendasDia:null, cancelamentos:null, travasAtual:null, travasPrev:null } };
-let _vendasPrimeiroCarregamento = true; // últimos 7 dias (vendas)
-let _cancPrimeiroCarregamento   = true; // últimos 7 dias (cancelamentos)
+const state = { 
+  isAdmin:false, 
+  selectedEmpresas:[],  // múltiplas
+  periodo:{inicio:null,fim:null}, 
+  data:null
+};
+let _vendasPrimeiro = true;
+let _cancPrimeiro   = true;
 
 /********************** UTIL *************************/
 const $ = (q)=>document.querySelector(q);
-function setBadgeEmpresa(name){ $('#empresaBadge').textContent = name || '—' }
-function todayISO(){ return new Date().toISOString().slice(0,10) }
-function addDaysISO(iso, delta){
-  const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+delta);
-  const y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
-  return `${y}-${m}-${dd}`;
+function setBadgeEmpresa(names){
+  if (!names || !names.length) $('#empresaBadge').textContent='—';
+  else if (names.length===1) $('#empresaBadge').textContent = `${names[0]} • (ADM)`;
+  else $('#empresaBadge').innerHTML = `<span class="tag">AGRUPADO</span> ${names.length} empresas`;
 }
+function todayISO(){ return new Date().toISOString().slice(0,10) }
+function addDaysISO(iso, delta){ const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+delta); const y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2); return `${y}-${m}-${dd}`; }
 function buildURL(base, params){ const u = new URL(base); Object.entries(params||{}).forEach(([k,v])=>{ if(v!==undefined && v!==null && v!=='') u.searchParams.set(k,v) }); return u.toString(); }
 async function safeFetch(url){ const res = await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }
 function pct(num, den){ return den>0 ? (num/den)*100 : 0 }
 function clamp(n, min, max){ return Math.max(min, Math.min(max, n)) }
+function toCSV(rows){ return rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n') }
+function parseBR(n){ if(typeof n==='number') return n; if(n==null || n==='') return 0; return Number(String(n).replace(/\s|R\$/g,'').replace(/\./g,'').replace(',', '.')) || 0; }
+function fmtBR(iso){ if(!iso) return ''; const d = new Date(iso+'T00:00:00'); if (isNaN(d)) return iso; return d.toLocaleDateString('pt-BR'); }
+function fmtYM(ym){ if(!ym) return '—'; const [y,m]=ym.split('-'); return `${m}/${y}`; }
+function prevMonthYM(ym){ if(!ym || ym.length<7) return ''; const [y,m] = ym.split('-').map(Number); const d = new Date(y, (m-1)-1, 1); const yy = d.getFullYear(); const mm = ('0'+(d.getMonth()+1)).slice(-2); return `${yy}-${mm}`; }
+function _dayOfMonth(iso){ const d = new Date(iso+'T00:00:00'); return isNaN(d)? 0 : d.getDate(); }
+function _daysInMonth(iso){ const d = new Date(iso+'T00:00:00'); if(isNaN(d)) return 0; return new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); }
+function calcularPrevisaoMensal(periodoISO, realizadoAteHoje){ const dia = _dayOfMonth(periodoISO), diasMes = _daysInMonth(periodoISO); if(!dia || !diasMes) return 0; return (realizadoAteHoje / dia) * diasMes; }
 function barHTML(label, value, max){
   const p = clamp(pct(value,max),0,200).toFixed(1);
   const theme = p>100? 'background:linear-gradient(90deg,var(--danger),#ff9a9a)' : 'background:linear-gradient(90deg,#7cb8ff,#77e0b5)';
   return `<div class="row" style="justify-content:space-between"><div>${label}</div><div><b>${CURRENCY.format(value)}</b> / ${CURRENCY.format(max)} — <span class="pill ${p>100?'bad':'ok'}">${p}%</span></div></div>
           <div class="progress"><i style="width:${Math.min(p,100)}%;${theme}"></i></div>`;
 }
-function toCSV(rows){ return rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n') }
-function parseBR(n){
-  if(typeof n==='number') return n;
-  if(n==null || n==='') return 0;
-  return Number(String(n).replace(/\s|R\$/g,'').replace(/\./g,'').replace(',', '.')) || 0;
-}
-function fmtBR(iso){
-  if(!iso) return '';
-  const d = new Date(iso+'T00:00:00');
-  if (isNaN(d)) return iso;
-  return d.toLocaleDateString('pt-BR');
-}
-function fmtYM(ym){ if(!ym) return '—'; const [y,m]=ym.split('-'); return `${m}/${y}`; }
-function prevMonthYM(ym){
-  if(!ym || ym.length<7) return '';
-  const [y,m] = ym.split('-').map(Number);
-  const d = new Date(y, (m-1)-1, 1);
-  const yy = d.getFullYear();
-  const mm = ('0'+(d.getMonth()+1)).slice(-2);
-  return `${yy}-${mm}`;
-}
-function _dayOfMonth(iso){ const d = new Date(iso+'T00:00:00'); return isNaN(d)? 0 : d.getDate(); }
-function _daysInMonth(iso){ const d = new Date(iso+'T00:00:00'); if(isNaN(d)) return 0; return new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); }
-function calcularPrevisaoMensal(periodoISO, realizadoAteHoje){
-  const dia = _dayOfMonth(periodoISO), diasMes = _daysInMonth(periodoISO);
-  if(!dia || !diasMes) return 0;
-  return (realizadoAteHoje / dia) * diasMes;
-}
 
 /********************** LOGIN *************************/
 const loginOverlay = $('#loginOverlay');
 const loadingOverlay = $('#loadingOverlay');
-const empresaSwitcher = $('#empresaSwitcher');
 
-$('#entrarBtn').addEventListener('click', ()=>doLogin());
+$('#entrarBtn').addEventListener('click', doLogin);
 $('#senhaInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-$('#empresaSelect').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-document.addEventListener('keydown', (e)=>{ 
-  if (loginOverlay.style.display !== 'none' && e.key === 'Enter') doLogin(); 
-});
-$('#verEmpresas').addEventListener('click', ()=> {
-  const list = [ADMIN.NAME, ...Object.keys(COMPANY_PASSWORDS)];
-  alert('Empresas habilitadas: '+ list.join(', '));
-});
+document.addEventListener('keydown', (e)=>{ if (loginOverlay.style.display !== 'none' && e.key === 'Enter') doLogin(); });
+
 $('#btnSair').addEventListener('click', ()=>{
   loginOverlay.style.display='flex';
-  state.empresa=null; state.isAdmin=false;
-  setBadgeEmpresa('—');
-  empresaSwitcher.style.display='none';
-  empresaSwitcher.innerHTML='';
+  state.isAdmin=false; state.selectedEmpresas=[];
+  setBadgeEmpresa(null);
+  closeEmpresaDropdown();
 });
 
-function initAdminSwitcher(){
-  empresaSwitcher.innerHTML = '';
-  const opts = Object.keys(COMPANY_PASSWORDS);
-  opts.forEach(nome=>{
-    const op = document.createElement('option');
-    op.value = nome; op.textContent = nome;
-    empresaSwitcher.appendChild(op);
-  });
-  empresaSwitcher.style.display = 'inline-block';
-  empresaSwitcher.onchange = async ()=>{
-    state.empresa = empresaSwitcher.value;
-    setBadgeEmpresa(`${state.empresa} • (ADM)`);
-    loadingOverlay.style.display='flex';
-    try{ await refreshAll(); } finally { loadingOverlay.style.display='none'; }
-  };
-}
-
 async function doLogin(){
-  const emp = $('#empresaSelect').value.trim();
   const pw = $('#senhaInput').value;
-
-  if (emp === ADMIN.NAME){
-    const ok = (pw === ADMIN.PASSWORD);
-    if(!ok){ $('#loginErr').style.display='block'; return; }
-    $('#loginErr').style.display='none';
-    state.isAdmin = true;
-    const first = Object.keys(COMPANY_PASSWORDS)[0];
-    state.empresa = first;
-    setBadgeEmpresa(`${first} • (ADM)`);
-    initAdminSwitcher();
-    empresaSwitcher.value = first;
-  } else {
-    const ok = COMPANY_PASSWORDS[emp] && COMPANY_PASSWORDS[emp]===pw;
-    if(!ok){ $('#loginErr').style.display='block'; return; }
-    $('#loginErr').style.display='none';
-    state.isAdmin = false;
-    state.empresa = emp;
-    setBadgeEmpresa(emp);
-    empresaSwitcher.style.display='none';
-    empresaSwitcher.innerHTML='';
-  }
+  const ok = (pw === ADMIN.PASSWORD);
+  if(!ok){ $('#loginErr').style.display='block'; return; }
+  $('#loginErr').style.display='none';
+  state.isAdmin = true;
 
   loginOverlay.style.display='none';
   $('#dtInicio').value = todayISO(); $('#dtFim').value = todayISO();
 
   loadingOverlay.style.display='flex';
-  try { await refreshAll(); } 
-  finally { loadingOverlay.style.display='none'; }
+  try { 
+    await carregarEmpresasDoPeriodo(); 
+    await refreshAll(); 
+  } finally { loadingOverlay.style.display='none'; }
 }
 
-/********************** INTERAÇÕES *************************/
+/********************** MENU – EMPRESAS MULTI *****************/
+const multi = {
+  wrap: $('#empresaMultiWrap'),
+  btn:  $('#empresaMultiBtn'),
+  drop: $('#empresaDropdown'),
+  list: $('#empresaList'),
+  search: $('#empresaSearch'),
+  btnAll: $('#btnSelectAll'),
+  btnCancel: $('#btnCancelarEmpresas'),
+  btnApply: $('#btnAplicarEmpresas'),
+  tempSelected: new Set()
+};
+
+function openEmpresaDropdown(){
+  multi.drop.classList.add('show');
+  multi.tempSelected = new Set(state.selectedEmpresas);
+  multi.search.value=''; filterEmpresaList('');
+}
+function closeEmpresaDropdown(){ multi.drop.classList.remove('show'); }
+multi.btn.addEventListener('click', ()=> multi.drop.classList.contains('show') ? closeEmpresaDropdown() : openEmpresaDropdown());
+multi.btnCancel.addEventListener('click', closeEmpresaDropdown);
+document.addEventListener('click', (e)=>{ if(!multi.wrap.contains(e.target)) closeEmpresaDropdown(); });
+
+multi.search.addEventListener('input', (e)=> filterEmpresaList(e.target.value.trim().toLowerCase()));
+multi.btnAll.addEventListener('click', ()=>{
+  const items = multi.list.querySelectorAll('.item input[type=checkbox]');
+  const allChecked = Array.from(items).every(i=>i.checked);
+  items.forEach(i=>{ i.checked = !allChecked; i.dispatchEvent(new Event('change')); });
+});
+
+multi.btnApply.addEventListener('click', async ()=>{
+  state.selectedEmpresas = Array.from(multi.tempSelected);
+  setBadgeEmpresa(state.selectedEmpresas);
+  multi.btn.textContent = `Empresas (${state.selectedEmpresas.length}) ▾`;
+  closeEmpresaDropdown();
+  loadingOverlay.style.display='flex';
+  try { await refreshAll(); } finally { loadingOverlay.style.display='none'; }
+});
+
+function renderEmpresaList(empresas){
+  multi.list.innerHTML = '';
+  empresas.sort((a,b)=> a.localeCompare(b,'pt-BR'));
+  empresas.forEach(nome=>{
+    const id = 'emp_' + btoa(unescape(encodeURIComponent(nome))).replace(/=/g,'');
+    const div = document.createElement('div');
+    div.className='item';
+    div.innerHTML = `
+      <input id="${id}" type="checkbox" ${state.selectedEmpresas.includes(nome)?'checked':''}/>
+      <label for="${id}" style="cursor:pointer">${nome}</label>
+    `;
+    const chk = div.querySelector('input');
+    chk.addEventListener('change', (e)=>{
+      if(e.target.checked) multi.tempSelected.add(nome);
+      else multi.tempSelected.delete(nome);
+    });
+    multi.list.appendChild(div);
+  });
+}
+function filterEmpresaList(q){
+  const items = multi.list.querySelectorAll('.item');
+  items.forEach(it=>{
+    const txt = it.textContent.toLowerCase();
+    it.style.display = txt.includes(q) ? '' : 'none';
+  });
+}
+
+/********************** INTERAÇÕES GERAIS *************************/
 $('#btnHoje').addEventListener('click', async ()=>{
   $('#dtInicio').value=todayISO(); $('#dtFim').value=todayISO();
   loadingOverlay.style.display='flex';
-  try { await refreshAll(); } finally { loadingOverlay.style.display='none'; }
+  try { await carregarEmpresasDoPeriodo(); await refreshAll(); } finally { loadingOverlay.style.display='none'; }
 });
 
 $('#btnAtualizar').addEventListener('click', async ()=>{
   loadingOverlay.style.display='flex';
-  try { await refreshAll(); } finally { loadingOverlay.style.display='none'; }
+  try { await carregarEmpresasDoPeriodo(); await refreshAll(); } finally { loadingOverlay.style.display='none'; }
 });
 
 $('#btnCSV').addEventListener('click', ()=>{
   const rows = [
-    ['Empresa', state.empresa + (state.isAdmin?' (ADM)':'')], ['Início', state.periodo.inicio], ['Fim', state.periodo.fim], [],
+    ['Empresas', state.selectedEmpresas.join(' + ') || '—'], 
+    ['Início', state.periodo.inicio], ['Fim', state.periodo.fim], [],
     ['KPI','Valor','Obs'],
     ['Meta Mensal', $('#kpiMeta').textContent, $('#kpiMetaSub').textContent],
-    ['Vendas do Dia', $('#kpiDia').textContent, $('#kpiDiaSub').textContent],
+    ['Vendas do Período', $('#kpiDia').textContent, $('#kpiDiaSub').textContent],
     ['Cancelamentos', $('#kpiCanc').textContent, $('#kpiCancSub').textContent],
     ['Travas de Compras', $('#kpiTrava').textContent, $('#kpiTravaSub').textContent],
   ];
   const blob = new Blob([toCSV(rows)], {type:'text/csv;charset=utf-8;'}); const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `painel_${(state.empresa||'empresa').replaceAll(' ','_')}.csv`; a.click();
+  a.href = URL.createObjectURL(blob); a.download = `painel_agrupado.csv`; a.click();
 });
+document.getElementById('btnPDF').addEventListener('click', async ()=>{ await exportPDF(); });
 
-/* ===== NOVO: Exportar PDF real (com paginação, header e footer) ===== */
-document.getElementById('btnPDF').addEventListener('click', async ()=>{ 
-  await exportPDF();
-});
-
-/********************** PARSE – METAS *************************/
+/********************** NORMALIZAÇÕES *************************/
 function normalizeMetasPayload(raw){
   const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
   return arr.map(r => ({
-    Data: r?.Data || r?.data || '',
+    Data: (r?.Data || r?.data || '').slice(0,10),
     Empresa: (r?.Empresa || r?.empresa || '').trim(),
     Previsto: parseBR(r?.Previsto ?? r?.previsto),
     Realizado: parseBR(r?.Realizado ?? r?.realizado),
   }));
 }
-function pickUltimaMeta(records, empresa){
-  const validos = records.filter(r =>
-    r.Empresa === empresa &&
-    r.Data && r.Data !== '1969-12-31' &&
-    (r.Previsto !== '' && r.Realizado !== '')
+
+/********************** EMPRESAS POR PERÍODO *************************/
+async function carregarEmpresasDoPeriodo(){
+  // Usa METAS sem filtro para extrair empresas existentes no período/datas
+  const ini = $('#dtInicio').value || todayISO();
+  const fim = $('#dtFim').value || ini;
+
+  let metasPacked = [];
+  try { metasPacked = await safeFetch(ENDPOINTS.METAS); } catch(e){ metasPacked = []; }
+
+  const metas = normalizeMetasPayload(metasPacked);
+  const empresasSet = new Set(
+    metas.filter(m => (!m.Data || (m.Data >= ini && m.Data <= fim)) && m.Empresa)
+         .map(m => m.Empresa)
   );
-  if(!validos.length) return { metaMensal:0, realizado:0, periodo:'-' };
-  const ultimaData = validos.reduce((m,r)=> r.Data>m? r.Data : m, validos[0].Data);
-  const rec = validos.find(r=>r.Data===ultimaData) || validos[validos.length-1];
-  return { metaMensal: parseBR(rec.Previsto), realizado: parseBR(rec.Realizado), periodo: rec.Data };
+  const empresas = Array.from(empresasSet);
+
+  // Se nada for encontrado nessa janela, tenta pegar todas conhecidas para não ficar vazio
+  if (empresas.length===0) {
+    metas.forEach(m => m.Empresa && empresasSet.add(m.Empresa));
+  }
+  const lista = Array.from(empresasSet);
+  renderEmpresaList(lista);
+
+  // Se ainda não há seleção, define todas por padrão
+  if (state.selectedEmpresas.length===0) {
+    state.selectedEmpresas = [...lista];
+    multi.btn.textContent = `Empresas (${state.selectedEmpresas.length}) ▾`;
+    setBadgeEmpresa(state.selectedEmpresas);
+  }
 }
 
-/********************** BUSCA DE DADOS *************************/
+/********************** BUSCA E AGREGAÇÃO *************************/
 async function refreshAll(){
-  if(!state.empresa) return;
-  state.periodo.inicio = $('#dtInicio').value; state.periodo.fim = $('#dtFim').value;
+  const empresas = state.selectedEmpresas;
+  if(!empresas || empresas.length===0) return;
 
-  // METAS
-  let metasPacked = null;
-  try{
-    const urlUltima = buildURL(ENDPOINTS.METAS, { empresa: state.empresa, ultima: 'true' });
-    metasPacked = await safeFetch(urlUltima);
-  }catch(e){ metasPacked = null; }
-  if(!metasPacked || (Array.isArray(metasPacked) && metasPacked.length===0) || (Array.isArray(metasPacked?.data) && metasPacked.data.length===0)){
-    try{ metasPacked = await safeFetch(ENDPOINTS.METAS); }catch(e){ metasPacked = []; }
-  }
-  const metasArr = normalizeMetasPayload(metasPacked);
-  const metas = pickUltimaMeta(metasArr, state.empresa);
+  state.periodo.inicio = $('#dtInicio').value || todayISO();
+  state.periodo.fim    = $('#dtFim').value    || $('#dtInicio').value || todayISO();
 
-  // VENDAS POR DIA
-  let vendasDia = null;
-  if (ENDPOINTS.VENDAS_DIA) {
+  // Coletores de agregação
+  let somaMeta = 0, somaRealizado = 0, periodoMeta = (state.periodo.fim||todayISO()).slice(0,10);
+
+  // Vendas por dia (somar por data)
+  const vendasMap = new Map(); // dataISO -> total
+  let vendasInicio=null, vendasFim=null;
+
+  // Cancelamentos
+  let cancTotal = 0;
+  const cancItensMap = new Map(); // nome -> total
+
+  // Travas / Planos (somar campos e mapas)
+  let travaTotal=0, travaFor=0, gastoGeral=0, gastoFor=0;
+  const planosAtualMap = new Map(); // nome -> valor
+  const planosPrevMap  = new Map();
+
+  const periodoMes = (state.periodo.fim || todayISO()).slice(0,7);
+  const periodoPrev = prevMonthYM(periodoMes);
+
+  // Para desempenho, rodar fetch por empresa em paralelo
+  await Promise.all(empresas.map(async (empresa)=>{
+    // METAS (última por empresa)
+    let metasPacked=null;
+    try{
+      const urlUltima = buildURL(ENDPOINTS.METAS, { empresa, ultima: 'true' });
+      metasPacked = await safeFetch(urlUltima);
+    }catch(e){ metasPacked = null; }
+    if(!metasPacked || (Array.isArray(metasPacked) && metasPacked.length===0) || (Array.isArray(metasPacked?.data) && metasPacked.data.length===0)){
+      try{ metasPacked = await safeFetch(ENDPOINTS.METAS); }catch(e){ metasPacked = []; }
+    }
+    const metasArr = normalizeMetasPayload(metasPacked);
+    const validos = metasArr.filter(r => r.Empresa === empresa && r.Data);
+    if(validos.length){
+      const ultimaData = validos.reduce((m,r)=> r.Data>m? r.Data : m, validos[0].Data);
+      const rec = validos.find(r=>r.Data===ultimaData) || validos[validos.length-1];
+      somaMeta += rec.Previsto||0;
+      somaRealizado += rec.Realizado||0;
+      periodoMeta = ultimaData; // usa a mais recente encontrada (não atrapalha a previsão agregada)
+    }
+
+    // VENDAS DIA (filtradas pelo período e somadas por data)
     try {
-      const serie = await safeFetch(buildURL(ENDPOINTS.VENDAS_DIA, { empresa: state.empresa }));
+      const serie = await safeFetch(buildURL(ENDPOINTS.VENDAS_DIA, { empresa }));
       const arr = Array.isArray(serie) ? serie : (Array.isArray(serie?.data) ? serie.data : []);
       const norm = arr.map(r => ({ 
         dataISO: (r?.data || r?.Data || '').slice(0,10), 
         total: Number(r?.total ?? r?.Total ?? r?.valor ?? 0)
       })).filter(x => x.dataISO);
-      norm.sort((a,b)=> a.dataISO.localeCompare(b.dataISO));
 
-      let janela = [];
-      if (_vendasPrimeiroCarregamento) {
-        janela = norm.slice(-7);
-        _vendasPrimeiroCarregamento = false;
-      } else {
-        const ini = state.periodo.inicio || '0000-01-01';
-        const fi  = state.periodo.fim    || '9999-12-31';
-        janela = norm.filter(x => x.dataISO >= ini && x.dataISO <= fi);
-      }
+      const ini = _vendasPrimeiro ? addDaysISO(todayISO(), -6) : state.periodo.inicio;
+      const fi  = _vendasPrimeiro ? todayISO() : state.periodo.fim;
+      const janela = norm.filter(x => x.dataISO >= ini && x.dataISO <= fi);
 
-      const labels = janela.map(x => fmtBR(x.dataISO));
-      const valores = janela.map(x => x.total);
-      const inicio = janela[0]?.dataISO || '';
-      const fim    = janela[janela.length-1]?.dataISO || inicio;
+      janela.forEach(x=>{
+        vendasMap.set(x.dataISO, (vendasMap.get(x.dataISO)||0) + (x.total||0));
+      });
+      if (!vendasInicio || janela[0]?.dataISO < vendasInicio) vendasInicio = janela[0]?.dataISO || vendasInicio;
+      if (!vendasFim || (janela[janela.length-1]?.dataISO || '') > vendasFim) vendasFim = janela[janela.length-1]?.dataISO || vendasFim;
+    } catch(e){ /* segue */ }
 
-      vendasDia = { inicio, fim, totalHoje: valores.reduce((a,b)=>a+b,0), labels, valores };
-    } catch (e) {
-      vendasDia = null;
-      _vendasPrimeiroCarregamento = false;
-    }
-  }
-
-  // CANCELAMENTOS
-  let cancelamentos = null;
-  if (ENDPOINTS.CANCELAMENTOS){
+    // CANCELAMENTOS (somar totais e itens)
     try{
-      if (_cancPrimeiroCarregamento){
-        const fim = todayISO();
-        const inicio = addDaysISO(fim, -6);
-        cancelamentos = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, { empresa: state.empresa, inicio, fim }));
-        cancelamentos.inicio = inicio; cancelamentos.fim = fim;
-        _cancPrimeiroCarregamento = false;
-      } else {
-        cancelamentos = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, { empresa: state.empresa, inicio: state.periodo.inicio, fim: state.periodo.fim }));
-        cancelamentos.inicio = state.periodo.inicio; cancelamentos.fim = state.periodo.fim;
+      const params = _cancPrimeiro
+        ? { empresa, inicio: addDaysISO(todayISO(), -6), fim: todayISO() }
+        : { empresa, inicio: state.periodo.inicio, fim: state.periodo.fim };
+      const cancel = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, params));
+
+      const totalEmp = cancel?.total ?? (Array.isArray(cancel?.itens) ? cancel.itens.reduce((s,i)=>s+parseBR(i.total??i.valor??0),0) : 0);
+      cancTotal += parseBR(totalEmp);
+
+      (Array.isArray(cancel?.itens) ? cancel.itens.map(it => ({ nome: it.nome||it.item||'—', total: parseBR(it.total ?? it.valor) })) : [])
+        .forEach(it => cancItensMap.set(it.nome, (cancItensMap.get(it.nome)||0) + (it.total||0)));
+    }catch(e){ /* segue */ }
+
+    // TRAVAS (mês atual e anterior) — somas + mapas
+    try{
+      const atual = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa, periodo: periodoMes }));
+      const prev  = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa, periodo: periodoPrev }));
+
+      function addTravas(payload, isPrev=false){
+        if(!payload) return;
+        const tt = parseBR(payload?.travaTotal ?? payload?.trava_total ?? 0);
+        const tf = parseBR(payload?.travaCompras ?? payload?.trava_compras ?? payload?.travaFornec ?? 0);
+        let gg = parseBR(payload?.gastoGeral ?? payload?.totalFonte9 ?? payload?.fonte9Total ?? 0);
+        let gf = parseBR(payload?.gastoFornec ?? payload?.fornecedoresComprado ?? 0);
+
+        if ((gg === 0 || gf === 0) && Array.isArray(payload?.planosFonte9)) {
+          const planos = payload.planosFonte9.map(p => ({ nome: String(p.nome||''), valor: parseBR(p.valor) }));
+          gg = planos.reduce((s,p)=> s + Math.abs(p.valor||0), 0);
+          gf = planos.filter(p => PLANOS_VALIDOS.has(p.nome)).reduce((s,p)=> s + Math.abs(p.valor||0), 0);
+        }
+
+        if(!isPrev){ travaTotal += tt; travaFor += tf; gastoGeral += gg; gastoFor += gf; }
+
+        const pools = [];
+        if (Array.isArray(payload.planosFonte9)) pools.push(payload.planosFonte9);
+        if (Array.isArray(payload.planos)) pools.push(payload.planos);
+        if (Array.isArray(payload.contas)) pools.push(payload.contas);
+        if (Array.isArray(payload.planosContabeis)) pools.push(payload.planosContabeis);
+
+        (pools.flat() || []).forEach(it=>{
+          const nome = String(it?.nome || it?.plano || it?.conta || it?.descricao || '—').trim();
+          if(!nome || nome==='—') return;
+          const v = Math.abs(parseBR(it?.valor ?? it?.total ?? it?.soma ?? 0));
+          const map = isPrev ? planosPrevMap : planosAtualMap;
+          map.set(nome, (map.get(nome)||0) + v);
+        });
       }
-    }catch(e){ cancelamentos = null; _cancPrimeiroCarregamento=false; }
-  }
+      addTravas(atual, false);
+      addTravas(prev,  true);
+    }catch(e){ /* segue */ }
+  }));
 
-  // TRAVAS — mês atual + mês anterior
-  const periodoMes = (state.periodo.fim || todayISO()).slice(0,7);
-  const periodoPrev = prevMonthYM(periodoMes);
-  let travasAtual = null, travasPrev = null;
-  if (ENDPOINTS.TRAVAS){
-    try { travasAtual = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa: state.empresa, periodo: periodoMes })); } catch(e){ travasAtual = null; }
-    try { travasPrev  = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa: state.empresa, periodo: periodoPrev })); } catch(e){ travasPrev = null; }
-  }
+  _vendasPrimeiro = false; _cancPrimeiro = false;
 
-  state.data = { metas, vendasDia, cancelamentos, travasAtual, travasPrev };
+  // Monta objetos finais
+  const metasAgregado = { metaMensal: somaMeta, realizado: somaRealizado, periodo: periodoMeta };
 
-  renderMetas(metas);
+  // Vendas agregadas em série
+  const vendasLabels = Array.from(vendasMap.keys()).sort();
+  const vendasValores = vendasLabels.map(k => vendasMap.get(k)||0);
+  const vendasDia = {
+    inicio: vendasLabels[0] || vendasInicio || state.periodo.inicio,
+    fim:    vendasLabels[vendasLabels.length-1] || vendasFim || state.periodo.fim,
+    totalHoje: vendasValores.reduce((a,b)=>a+b,0),
+    labels: vendasLabels.map(fmtBR),
+    valores: vendasValores
+  };
+
+  // Cancelamentos agregados
+  const cancItens = Array.from(cancItensMap.entries()).map(([nome, total])=>({nome,total}));
+  cancItens.sort((a,b)=> b.total - a.total);
+  const cancelamentos = { total: cancTotal, itens: cancItens, inicio: state.periodo.inicio, fim: state.periodo.fim };
+
+  // Travas agregadas
+  const travasAtual = { travaTotal, travaCompras: travaFor, gastoGeral, gastoFornec: gastoFor, planosFonte9: Array.from(planosAtualMap.entries()).map(([nome,valor])=>({nome,valor})) };
+  const travasPrev  = { planosFonte9: Array.from(planosPrevMap.entries()).map(([nome,valor])=>({nome,valor})) };
+
+  state.data = { metas: metasAgregado, vendasDia, cancelamentos, travasAtual, travasPrev };
+
+  renderMetas(metasAgregado);
   renderVendasDia(vendasDia);
   renderCancelamentos(cancelamentos);
   renderTravas(travasAtual);
   renderPlanosAlertas(travasAtual, travasPrev, periodoMes, periodoPrev);
 }
 
-/********************** CELEBRAÇÃO: modal + fogos **********************/
+/********************** CELEBRAÇÃO (mesmo do seu) **********************/
 const cele = {
-  el: $('#celeOverlay'),
-  back: $('#celeBack'),
-  closeBtn: $('#celeClose'),
-  title: $('#celeTitle'),
-  sub: $('#celeSub'),
-  cvs: document.getElementById('celeCanvas'),
+  el: $('#celeOverlay'), back: $('#celeBack'), closeBtn: $('#celeClose'),
+  title: $('#celeTitle'), sub: $('#celeSub'), cvs: document.getElementById('celeCanvas'),
   ctx: null, W: 0, H: 0, running: false, raf: 0, rockets: [], particles: [],
   start(titulo, subtitulo){
     if(this.running) return;
@@ -573,12 +656,7 @@ const cele = {
       if(p.alpha<=0 || p.y>this.H+20) this.particles.splice(i,1); }
     this.raf = requestAnimationFrame(()=>this.loop());
   },
-  launchRocket(){
-    const x = Math.random() * this.W * 0.8 + this.W*0.1, y = this.H + 10;
-    const vx = (Math.random()-0.5) * 60, vy = - (180 + Math.random()*140);
-    const hue = Math.floor(Math.random()*360); const color = `hsl(${hue}, 80%, 60%)`;
-    this.rockets.push({x,y,vx,vy,life:0.8+Math.random()*0.6,color});
-  },
+  launchRocket(){ const x = Math.random() * this.W * 0.8 + this.W*0.1, y = this.H + 10; const vx = (Math.random()-0.5) * 60, vy = - (180 + Math.random()*140); const hue = Math.floor(Math.random()*360); const color = `hsl(${hue}, 80%, 60%)`; this.rockets.push({x,y,vx,vy,life:0.8+Math.random()*0.6,color}); },
   explode(x,y,color){
     const tmp = document.createElement('canvas').getContext('2d'); tmp.fillStyle = color; tmp.fillRect(0,0,1,1);
     const [r,g,b] = tmp.getImageData(0,0,1,1).data;
@@ -593,10 +671,10 @@ document.getElementById('celeClose').addEventListener('click', ()=> cele.stop())
 document.getElementById('celeBack').addEventListener('click', ()=> cele.stop());
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') cele.stop(); });
 
-function maybeCelebrate(pReal, empresa, periodo, meta, realizado){
-  if(!(pReal>=100) || !empresa || !periodo) return;
+function maybeCelebrate(pReal, empresas, periodo, meta, realizado){
+  if(!(pReal>=100)) return;
   const ym = String(periodo).slice(0,7) || 'mes';
-  const key = `cele:${empresa}|${ym}`;
+  const key = `cele:${(empresas||[]).join('+')}|${ym}`;
   if(sessionStorage.getItem(key)) return;
   const titulo = 'Meta atingida! 🎉';
   const subt = `Realizado de ${CURRENCY.format(realizado)} sobre meta de ${CURRENCY.format(meta)} (${pReal.toFixed(1)}%). Excelente!`;
@@ -622,27 +700,15 @@ function renderMetas(data){
     `<br>Previsão ${CURRENCY.format(previsao)} — ` +
     `<span class="pill ${pPrev>=100?'ok':pPrev>=80?'neutral':'bad'}">${pPrev.toFixed(1)}%</span>`;
 
-  if(meta>0) maybeCelebrate(pReal, state.empresa, periodo, meta, realizado);
+  if(meta>0) maybeCelebrate(pReal, state.selectedEmpresas, periodo, meta, realizado);
 
   const ctx = document.getElementById('chartMetas');
   const ds = {
     labels:['Previsto (última data)','Realizado (última data)','Previsão (mês)'],
-    datasets:[{
-      label:'R$',
-      data:[meta, realizado, previsao],
-      borderWidth:2,
-      backgroundColor:['#1b2652','#77e0b5','#ffb84d'],
-      borderColor:'#88f0d4'
-    }]
+    datasets:[{ label:'R$', data:[meta, realizado, previsao], borderWidth:2, backgroundColor:['#1b2652','#77e0b5','#ffb84d'], borderColor:'#88f0d4' }]
   };
   if(chartMetas){ chartMetas.data = ds; chartMetas.update(); }
-  else {
-    chartMetas = new Chart(ctx, {
-      type:'bar',
-      data: ds,
-      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } }
-    });
-  }
+  else { chartMetas = new Chart(ctx, { type:'bar', data: ds, options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } } }); }
 }
 
 /********************** RENDER – VENDAS POR DIA *************************/
@@ -650,7 +716,6 @@ let chartDia;
 function renderVendasDia(data){
   const totalPeriodo = data?.totalHoje ?? 0;
   $('#kpiDia').textContent = CURRENCY.format(totalPeriodo);
-
   let sub = '—';
   if (data?.inicio || data?.fim) {
     const i = data.inicio ? fmtBR(data.inicio) : '—';
@@ -662,7 +727,7 @@ function renderVendasDia(data){
   const labels = data?.labels ?? [];
   const valores = data?.valores ?? [];
   const ctx = document.getElementById('chartDia');
-  const ds = { labels, datasets:[{ label:'R$ por dia', data: valores, tension:.3, fill:true, borderWidth:2, borderColor:'#7cb8ff', backgroundColor:'rgba(124,184,255,.18)' }] };
+  const ds = { labels, datasets:[{ label:'R$ por dia (agrupado)', data: valores, tension:.3, fill:true, borderWidth:2, borderColor:'#7cb8ff', backgroundColor:'rgba(124,184,255,.18)' }] };
   if(chartDia){ chartDia.data = ds; chartDia.update(); }
   else { chartDia = new Chart(ctx, { type:'line', data: ds, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } } }); }
 }
@@ -670,7 +735,7 @@ function renderVendasDia(data){
 /********************** RENDER – CANCELAMENTOS *************************/
 let chartCanc;
 function renderCancelamentos(data){
-  const total = data?.total ?? (Array.isArray(data?.itens) ? data.itens.reduce((s,i)=>s+parseBR(i.total??i.valor??0),0) : 0);
+  const total = parseBR(data?.total ?? 0);
   $('#kpiCanc').textContent = CURRENCY.format(total);
 
   const totalVendas = state.data?.metas?.realizado ?? 0;
@@ -678,37 +743,22 @@ function renderCancelamentos(data){
   const subPeriodo = (data?.inicio || data?.fim) ? ` — ${fmtBR(data.inicio||'')} a ${fmtBR(data.fim||'')}` : '';
   $('#kpiCancSub').innerHTML = `${CURRENCY.format(total)} no período${subPeriodo} — <span class="pill ${pc<3?'ok':pc<8?'neutral':'bad'}">${pc.toFixed(1)}%</span>`;
 
-  let labels = [], valores = [];
-  if (Array.isArray(data?.itens) && data.itens.length){
-    const itens = data.itens.map(it => ({ nome: it.nome||it.item||'—', total: parseBR(it.total ?? it.valor) }));
-    const top = itens.sort((a,b)=>b.total-a.total).slice(0,6);
-    labels = top.map(t=>t.nome);
-    valores = top.map(t=>t.total);
-  } else if (Array.isArray(data?.motivos)) {
-    const top = [...data.motivos].sort((a,b)=>parseBR(b.valor)-parseBR(a.valor)).slice(0,6);
-    labels = top.map(m=>m.motivo);
-    valores = top.map(m=>parseBR(m.valor));
-  }
+  const itensList = Array.isArray(data?.itens) ? data.itens.slice(0) : [];
+  itensList.sort((a,b)=>b.total-a.total);
+  const top = itensList.slice(0,6);
+  const labels = top.map(t=>t.nome);
+  const valores = top.map(t=>t.total);
 
   const ctx = document.getElementById('chartCanc');
   const ds = { 
     labels, 
-    datasets:[{
-      label:'R$',
-      data: valores,
-      borderWidth:1,
-      borderColor:'rgba(255,255,255,.08)',
-      backgroundColor: labels.map((_,i)=> PALETTE[i % PALETTE.length]),
-      hoverOffset: 6
-    }] 
+    datasets:[{ label:'R$', data: valores, borderWidth:1, borderColor:'rgba(255,255,255,.08)', backgroundColor: labels.map((_,i)=> PALETTE[i % PALETTE.length]), hoverOffset: 6 }] 
   };
   if(chartCanc){ chartCanc.data = ds; chartCanc.update(); }
   else { chartCanc = new Chart(ctx, { type:'doughnut', data: ds, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} } } }); }
 
   const tbody = document.querySelector('#tblCanc tbody');
   tbody.innerHTML='';
-  const itensList = Array.isArray(data?.itens) ? data.itens.map(it => ({ nome: it.nome||it.item||'—', total: parseBR(it.total ?? it.valor) })) : [];
-  itensList.sort((a,b)=>b.total-a.total);
   itensList.forEach(it=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>❌ ${it.nome}</td><td style="white-space:nowrap">${CURRENCY.format(it.total)}</td>`;
@@ -716,7 +766,7 @@ function renderCancelamentos(data){
   });
 }
 
-/********************** AUX: extrair mapa de planos (nome -> valor absoluto) *************************/
+/********************** PLANOS / TRAVAS *************************/
 function extractPlanosMap(payload){
   const map = new Map();
   if(!payload) return map;
@@ -734,7 +784,6 @@ function extractPlanosMap(payload){
   return map;
 }
 
-/********************** RENDER – PLANOS (alertas 80%+ vs mês anterior) *************************/
 function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
   const badge = document.getElementById('planosBadge');
   badge.textContent = `${fmtYM(ymAtual)} vs ${fmtYM(ymPrev)}`;
@@ -747,9 +796,7 @@ function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
     const vPrev = prev.get(nome) || 0;
     if (vPrev <= 0) continue;
     const p = (vAtual / vPrev) * 100;
-    if (p >= 80){
-      rows.push({ nome, atual: vAtual, anterior: vPrev, perc: p });
-    }
+    if (p >= 80){ rows.push({ nome, atual: vAtual, anterior: vPrev, perc: p }); }
   }
   rows.sort((a,b)=> b.perc - a.perc);
 
@@ -772,7 +819,6 @@ function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
   });
 }
 
-/********************** RENDER – TRAVAS *************************/
 function renderTravas(data){
   const travaTotal = parseBR(data?.travaTotal ?? data?.trava_total ?? 0);
   const travaFor   = parseBR(data?.travaCompras ?? data?.trava_compras ?? data?.travaFornec ?? 0);
@@ -792,49 +838,30 @@ function renderTravas(data){
 
   $('#kpiTrava').textContent = CURRENCY.format(gastoGeral);
   $('#kpiTravaSub').innerHTML = (travaTotal||travaFor) ? `
-    Geral: <b>${CURRENCY.format(gastoGeral)}</b> de ${CURRENCY.format(travaTotal)} — ${pill(pTotal)}<br>
-    Fornecedores: <b>${CURRENCY.format(gastoFor)}</b> de ${CURRENCY.format(travaFor)} — ${pill(pFor)}
+    Geral (agrupado): <b>${CURRENCY.format(gastoGeral)}</b> de ${CURRENCY.format(travaTotal)} — ${pill(pTotal)}<br>
+    Fornecedores (agrupado): <b>${CURRENCY.format(gastoFor)}</b> de ${CURRENCY.format(travaFor)} — ${pill(pFor)}
   ` : '—';
 
   const wrap = document.getElementById('travasWrap');
   wrap.innerHTML = '';
   if (travaTotal || gastoGeral || travaFor || gastoFor){
-    wrap.insertAdjacentHTML('beforeend', barHTML('Trava Total de Pagamentos', gastoGeral, travaTotal));
-    wrap.insertAdjacentHTML('beforeend', barHTML('Trava Fornecedores',        gastoFor,   travaFor));
+    wrap.insertAdjacentHTML('beforeend', barHTML('Trava Total de Pagamentos (agrupado)', gastoGeral, travaTotal));
+    wrap.insertAdjacentHTML('beforeend', barHTML('Trava Fornecedores (agrupado)',        gastoFor,   travaFor));
   } else {
     wrap.innerHTML = '<div class="badge">Sem dados de travas para o período.</div>';
   }
 }
 
-/********************** NOVO – EXPORTAR PDF *************************/
+/********************** PDF *************************/
 async function exportPDF(){
   const { jsPDF } = window.jspdf;
-
-  // Garante que os gráficos estejam estáticos antes da captura
-  try {
-    if (window.Chart) {
-      Chart.registry?.plugins?.getAll?.().forEach(()=>{});
-      Chart.helpers.each(Chart.instances, function(chart){
-        if (chart && typeof chart.update === 'function') chart.update(0);
-      });
-    }
-  } catch(e){ /* segue mesmo assim */ }
-
-  // Esconde overlays durante a captura
+  try { if (window.Chart) Chart.helpers.each(Chart.instances, c=>{ if (c && typeof c.update==='function') c.update(0); }); } catch(e){}
   const hideElems = [ '#loginOverlay', '#loadingOverlay', '#celeOverlay' ];
-  const prevDisplay = new Map();
-  hideElems.forEach(sel=>{
-    const el = document.querySelector(sel);
-    if (el){
-      prevDisplay.set(el, el.style.display);
-      el.style.display = 'none';
-    }
-  });
-
+  const prev = new Map();
+  hideElems.forEach(sel=>{ const el=document.querySelector(sel); if(el){ prev.set(el, el.style.display); el.style.display='none'; } });
   const painel = document.getElementById('painel');
 
-  // Cabeçalho/rodapé para o PDF
-  const empresaTxt  = (state.empresa || '—') + (state.isAdmin ? ' (ADM)' : '');
+  const empresasTxt  = (state.selectedEmpresas||[]).join(' + ') || '—';
   const periodoTxt  = `${fmtBR(state.periodo.inicio)||'—'} a ${fmtBR(state.periodo.fim)||'—'}`;
   const geradoEm    = new Date().toLocaleString('pt-BR');
 
@@ -842,57 +869,36 @@ async function exportPDF(){
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
 
-  // Captura do DOM em alta resolução
   const canvas = await html2canvas(painel, {
     backgroundColor: '#0b1020',
     scale: window.devicePixelRatio > 1 ? 2 : 1.8,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
+    useCORS: true, allowTaint: true, logging: false,
     windowWidth: document.documentElement.scrollWidth,
     windowHeight: document.documentElement.scrollHeight
   });
 
-  // Restaura overlays
-  hideElems.forEach(sel=>{
-    const el = document.querySelector(sel);
-    if (el && prevDisplay.has(el)) el.style.display = prevDisplay.get(el);
-  });
+  hideElems.forEach(sel=>{ const el=document.querySelector(sel); if(el && prev.has(el)) el.style.display=prev.get(el); });
 
   const imgData = canvas.toDataURL('image/png');
-  const imgW = pageW; // preencher a largura
-  const imgH = canvas.height * imgW / canvas.width;
+  const imgW = pageW, imgH = canvas.height * imgW / canvas.width;
+  let heightLeft = imgH, position = 0;
 
-  let heightLeft = imgH;
-  let position = 0;
-
-  // Funções de header/footer
-  function drawHeaderFooter(pageNumber, totalPagesGuess){
-    // Header
-    pdf.setFillColor(11,16,32); // barra discreta
-    pdf.rect(0, 0, pageW, 12, 'F');
-
+  function drawHeaderFooter(pageNumber){
+    pdf.setFillColor(11,16,32); pdf.rect(0, 0, pageW, 12, 'F');
     pdf.setTextColor(190, 221, 255);
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
-    pdf.text('PAINEL DO GESTOR — GRUPO DV', 6, 8);
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.text('PAINEL DO GESTOR — GRUPO DV', 6, 8);
     pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
-    pdf.text(`Empresa: ${empresaTxt}`, pageW/2, 8, { align:'center' });
+    pdf.text(`Empresas: ${empresasTxt}`, pageW/2, 8, { align:'center' });
     pdf.text(`Período: ${periodoTxt} • Gerado em: ${geradoEm}`, pageW-6, 8, { align:'right' });
-
-    // Footer
-    pdf.setDrawColor(80, 100, 150);
-    pdf.setLineWidth(0.2); pdf.line(6, pageH-10, pageW-6, pageH-10);
-    pdf.setTextColor(200, 210, 230);
-    pdf.setFontSize(9);
+    pdf.setDrawColor(80, 100, 150); pdf.setLineWidth(0.2); pdf.line(6, pageH-10, pageW-6, pageH-10);
+    pdf.setTextColor(200, 210, 230); pdf.setFontSize(9);
     pdf.text(`© ${new Date().getFullYear()} Grupo DV — Relatório do Painel`, 6, pageH-5);
-    pdf.text(`Página ${pageNumber}${totalPagesGuess ? ' de ' + totalPagesGuess : ''}`, pageW-6, pageH-5, { align:'right' });
+    pdf.text(`Página ${pageNumber}`, pageW-6, pageH-5, { align:'right' });
   }
 
-  // Primeira página
-  pdf.addImage(imgData, 'PNG', 0, position + 12, imgW, imgH); // +12 para não cobrir header
+  pdf.addImage(imgData, 'PNG', 0, position + 12, imgW, imgH);
   drawHeaderFooter(1);
-
-  heightLeft -= pageH - 12; // desconta área útil abaixo do header
+  heightLeft -= pageH - 12;
 
   let page = 2;
   while (heightLeft > 0) {
@@ -904,11 +910,11 @@ async function exportPDF(){
     page++;
   }
 
-  const nomeArquivo = `Relatorio_${(state.empresa||'Empresa').replaceAll(' ','_')}_${(state.periodo.inicio||'')}_${(state.periodo.fim||'')}.pdf`;
+  const nomeArquivo = `Relatorio_agrupado_${(state.periodo.inicio||'')}_${(state.periodo.fim||'')}.pdf`;
   pdf.save(nomeArquivo);
 }
 
-/********************** INICIALIZAÇÃO *************************/
+/********************** INICIALIZA *************************/
 window.addEventListener('load', ()=>{
   $('#dtInicio').value = todayISO(); $('#dtFim').value = todayISO();
 });
