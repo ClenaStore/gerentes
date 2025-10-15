@@ -1,923 +1,160 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GESTORES</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <style>
-    :root{
-      --bg:#0b1020; --panel:#111834; --muted:#8ea0c7; --card:#0f1530; --accent:#77e0b5; --accent2:#7cb8ff; --warn:#ffb84d; --danger:#ff6b6b;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#e9eeff;background:linear-gradient(180deg,#0b1020,#0b0f1c);} 
-    html, body { height: 100%; }
-    .wrap{max-width:none;width:100%;min-height:100vh;margin:0;padding:20px 16px 56px}
-    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin:8px 0 20px}
-    .title{font-weight:800;font-size:20px;letter-spacing:.2px}
-    .badge{padding:6px 10px;border-radius:999px;background:rgba(124,184,255,.15);color:#beddff;font-size:12px}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.25);border-radius:16px}
-    .panel{padding:16px}
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .kpi{padding:14px 14px;border-radius:16px;background:linear-gradient(180deg,#0f1530 0%, #0b122a 100%);border:1px solid rgba(255,255,255,.06)}
-    .kpi h4{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600}
-    .kpi .val{font-weight:800;font-size:22px}
-    .kpi .sub{font-size:12px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .section h3{margin:0 0 10px;font-size:14px;color:#cfe3ff;letter-spacing:.2px}
-    .btn{background:#1b2652;border:1px solid rgba(255,255,255,.12);color:#e9eeff;padding:10px 12px;border-radius:12px;font-weight:600;cursor:pointer}
-    .btn:hover{filter:brightness(1.05)}
-    .btn.primary{background:linear-gradient(90deg,#3e8eff,#6de2c8);color:#0b1020;border:none}
-    .btn.warn{background:linear-gradient(90deg,#ffb84d,#ff7f50);color:#1a1200;border:none}
-    .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,.2)}
-    .select, .input{background:#0e1431;color:#e9eeff;border:1px solid rgba(255,255,255,.12);padding:10px 12px;border-radius:10px}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .progress{height:10px;border-radius:999px;background:#1b244b;overflow:hidden}
-    .progress>i{display:block;height:100%;background:linear-gradient(90deg,#7cb8ff,#77e0b5)}
-    .table{width:100%;border-collapse:collapse;font-size:12px}
-    .table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
-    .pill{padding:2px 8px;border-radius:999px;font-weight:700;font-size:11px}
-    .ok{background:rgba(119,224,181,.15);color:#b8fbe2;border:1px solid rgba(119,224,181,.3)}
-    .bad{background:rgba(255,107,107,.15);color:#ffd0d0;border:1px solid rgba(255,255,255,.35)}
-    .neutral{background:rgba(124,184,255,.15);color:#dcebff;border:1px solid rgba(124,184,255,.3)}
-    .chart-box{position:relative;height:32vh;min-height:240px}
-    .chart-box.tall{height:38vh;min-height:260px}
-
-    /* Overlays */
-    .overlay{position:fixed;inset:0;background:radial-gradient(1200px 600px at 70% -10%,rgba(76,133,255,.25),transparent 60%),
-                                   radial-gradient(1000px 600px at -10% 40%,rgba(119,224,181,.15),transparent 60%),
-                                   #0b1020f2;display:flex;align-items:center;justify-content:center;z-index:99}
-    .login{width:min(520px,92vw);padding:24px;border-radius:18px}
-    .login h2{margin:6px 0 2px}
-    .login small{color:var(--muted)}
-    .login .field{display:grid;gap:8px;margin:10px 0}
-    .login .field label{font-size:12px;color:#cfe3ff}
-    .login .hint{font-size:11px;color:var(--muted)}
-    .lock{display:inline-flex;width:36px;height:36px;border-radius:12px;align-items:center;justify-content:center;background:rgba(255,255,255,.06);margin-right:8px}
-    .err{color:#ffd0d0}
-    #loadingOverlay{display:none}
-    .loader-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;background:#0b1020e6;padding:20px 24px;border-radius:16px;border:1px solid rgba(255,255,255,.08)}
-    .spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#7cb8ff;animation:spin 0.9s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* Celebracao */
-    #celeOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:120}
-    #celeOverlay.show{display:flex}
-    #celeOverlay .back{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
-    #celeCanvas{position:absolute;inset:0;display:block}
-    .cele-card{position:relative;z-index:2;text-align:center;padding:18px 20px;border-radius:16px;
-      background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.06));
-      border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:min(560px,92vw)}
-    .cele-title{font-weight:900;font-size:22px;letter-spacing:.3px;margin:0 0 8px}
-    .cele-sub{color:#cfe3ff;margin:0 0 12px}
-    .cele-btn{background:linear-gradient(90deg,#3e8eff,#6de2c8);color:#0b1020;border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
-    .cele-emoji{font-size:20px;margin-left:6px}
-
-    /* PDF print */
-    @media print{
-      #loginOverlay, #loadingOverlay, #celeOverlay, .toolbar button, #btnCSV, #btnPDF, #empresaMultiWrap, #btnSair { display:none !important; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .wrap { padding: 12mm; }
-    }
-
-    /* ===== Dropdown multi-seleção ===== */
-    #empresaMultiWrap{position:relative}
-    #empresaMultiBtn{display:flex;align-items:center;gap:8px;min-width:240px}
-    #empresaDropdown{
-      position:absolute; top:110%; left:0; z-index:30; min-width:280px;
-      background:#0e1431; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;
-      box-shadow:0 14px 30px rgba(0,0,0,.35); display:none; max-height:320px; overflow:auto;
-    }
-    #empresaDropdown.show{display:block}
-    #empresaDropdown .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-    #empresaDropdown .search{width:100%;margin:6px 0 8px}
-    #empresaDropdown .item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:8px;cursor:pointer}
-    #empresaDropdown .item:hover{background:rgba(255,255,255,.05)}
-    #empresaDropdown .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
-    .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:rgba(124,184,255,.15);border:1px solid rgba(124,184,255,.3);font-size:12px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Gerência - Delícia & Mercatto</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1724;--card:#1e293b;--accent:#ff8f1f;--text:#fff;--muted:#9aa6b2;--success:#16a34a;
+}
+body {
+  font-family: Inter, sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0;
+}
+header {
+  background:var(--card);padding:15px;text-align:center;font-size:20px;color:var(--accent);
+  box-shadow:0 2px 10px rgba(0,0,0,0.3)
+}
+.container {max-width:900px;margin:20px auto;padding:20px;background:var(--card);border-radius:10px;}
+h2{color:var(--accent);border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:5px;}
+label{display:block;margin:8px 0 4px;}
+input,select,textarea,button{
+  width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;
+  background:#334155;color:#fff;font-size:14px;
+}
+button{cursor:pointer;background:var(--accent);color:#000;font-weight:600;}
+button:hover{opacity:0.9;}
+.task-item{display:flex;align-items:center;justify-content:space-between;background:#334155;
+  padding:8px 10px;border-radius:6px;margin-bottom:6px;}
+.task-item span{flex:1;}
+.done{color:var(--success);text-decoration:line-through;}
+.hidden{display:none;}
+</style>
 </head>
 <body>
-  <!-- LOGIN: agora SOMENTE ADMINISTRADOR -->
-  <div class="overlay" id="loginOverlay">
-    <div class="card login">
-      <div class="row"><span class="lock">🔒</span><div>
-        <div class="badge">Acesso exclusivo do <b>ADMINISTRADOR</b></div>
-        <h2>Entrar no Painel</h2>
-        <small>Use a senha do <b>ADMINISTRADOR</b>. Depois escolha as empresas no menu suspenso.</small>
-      </div></div>
-      <div class="field">
-        <label>Usuário</label>
-        <input class="input" value="ADMINISTRADOR" disabled />
-      </div>
-      <div class="field">
-        <label>Senha do ADMINISTRADOR</label>
-        <input id="senhaInput" class="input" type="password" placeholder="••••••••" />
-        <div class="hint err" id="loginErr" style="display:none">Senha inválida.</div>
-      </div>
-      <div class="row" style="justify-content:flex-end;margin-top:6px">
-        <button class="btn primary" id="entrarBtn">Entrar</button>
-      </div>
-      <p class="badge" style="margin-top:10px">Após entrar, clique em <b>Empresas</b> para selecionar (com flags) e ver os dados agrupados.</p>
-    </div>
-  </div>
 
-  <!-- Overlay de Carregando -->
-  <div class="overlay" id="loadingOverlay">
-    <div class="loader-wrap">
-      <div class="spinner"></div>
-      <div class="badge">Carregando dados…</div>
-    </div>
-  </div>
+<header>🧭 Painel de Gerência</header>
 
-  <!-- Overlay de CELEBRAÇÃO -->
-  <div id="celeOverlay" aria-hidden="true">
-    <div class="back" id="celeBack"></div>
-    <canvas id="celeCanvas"></canvas>
-    <div class="cele-card" role="dialog" aria-modal="true" aria-labelledby="celeTitle">
-      <h3 id="celeTitle" class="cele-title">Meta atingida! 🎉</h3>
-      <p id="celeSub" class="cele-sub">Parabéns, você bateu 100% da meta deste período.</p>
-      <button id="celeClose" class="cele-btn">Fechar <span class="cele-emoji"></span></button>
-    </div>
-  </div>
+<div id="login" class="container">
+  <h2>Identificação do Gerente</h2>
+  <label>Usuário:</label>
+  <input type="text" id="usuario">
+  <label>Senha:</label>
+  <input type="password" id="senha">
+  <button onclick="login()">Entrar</button>
+  <p id="loginMsg" style="color:red"></p>
+</div>
 
-  <div class="wrap" id="painel">
-    <header>
-      <div>
-        <div class="title">PAINEL DO GESTOR - GRUPO DV</div>
-        <div class="badge" id="empresaBadge">—</div>
-      </div>
-      <div class="toolbar">
-        <!-- NOVO: Menu suspenso multi-seleção (mantém “como está” visualmente) -->
-        <div id="empresaMultiWrap">
-          <button class="btn" id="empresaMultiBtn">Empresas (0) ▾</button>
-          <div id="empresaDropdown" class="card">
-            <div class="head">
-              <div class="badge">Selecionar empresas</div>
-              <button class="btn ghost" id="btnSelectAll">Selecionar todas</button>
-            </div>
-            <input id="empresaSearch" class="input search" placeholder="Pesquisar empresa..." />
-            <div id="empresaList"></div>
-            <div class="foot">
-              <button class="btn" id="btnCancelarEmpresas">Cancelar</button>
-              <button class="btn primary" id="btnAplicarEmpresas">Aplicar</button>
-            </div>
-          </div>
-        </div>
+<div id="painel" class="container hidden">
+  <h2 id="empresaNome"></h2>
 
-        <!-- Mantido um <select> oculto somente para compatibilidade, caso precise -->
-        <select class="select" id="empresaSwitcher" style="display:none;min-width:220px"></select>
+  <section>
+    <h3>✅ Check-list Diário</h3>
+    <div id="checklist"></div>
+  </section>
 
-        <input type="date" class="input" id="dtInicio" />
-        <input type="date" class="input" id="dtFim" />
-        <button class="btn" id="btnHoje">Hoje</button>
-        <button class="btn primary" id="btnAtualizar">Atualizar</button>
-        <button class="btn warn" id="btnSair">Sair</button>
-      </div>
-    </header>
+  <section>
+    <h3>🥣 Registro de Desperdícios / Sobras / Devoluções</h3>
+    <label>Categoria:</label>
+    <select id="categoria">
+      <option value="">Selecione...</option>
+      <option>Desperdício</option>
+      <option>Sobra</option>
+      <option>Devolução</option>
+    </select>
+    <label>Descrição:</label>
+    <textarea id="descricao"></textarea>
+    <label>Quantidade / Valor:</label>
+    <input type="text" id="quantidade">
+    <button onclick="registrarLancamento()">Registrar</button>
+  </section>
 
-    <!-- KPIs -->
-    <section class="kpis">
-      <div class="kpi"><h4>Meta Mensal</h4><div class="val" id="kpiMeta">—</div><div class="sub" id="kpiMetaSub">—</div></div>
-      <div class="kpi"><h4>Vendas do período</h4><div class="val" id="kpiDia">—</div><div class="sub" id="kpiDiaSub">—</div></div>
-      <div class="kpi"><h4>Cancelamentos</h4><div class="val" id="kpiCanc">—</div><div class="sub" id="kpiCancSub">—</div></div>
-      <div class="kpi"><h4>Travas de Compras</h4><div class="val" id="kpiTrava">—</div><div class="sub" id="kpiTravaSub">—</div></div>
-    </section>
-
-    <div class="grid" style="margin-top:14px">
-      <section class="card panel section">
-        <h3>1) Metas de Vendas</h3>
-        <div class="chart-box"><canvas id="chartMetas"></canvas></div>
-      </section>
-
-      <section class="card panel section">
-        <h3>2) Vendas do período</h3>
-        <div class="chart-box"><canvas id="chartDia"></canvas></div>
-      </section>
-
-      <section class="card panel section">
-        <h3>3) Cancelamentos</h3>
-        <div class="row" style="gap:16px;align-items:flex-start">
-          <div style="flex:1">
-            <div class="chart-box tall"><canvas id="chartCanc"></canvas></div>
-          </div>
-          <div style="flex:1">
-            <div class="canc-list">
-              <table class="table" id="tblCanc">
-                <thead><tr><th>Item</th><th>Total</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card panel section">
-        <h3>4) Travas de Compras + Planos de Contas (≥80% do mês anterior) 
-          <span class="badge" id="planosBadge">—</span>
-        </h3>
-        <div id="travasWrap" class="row" style="flex-direction:column;align-items:stretch;gap:12px;margin-bottom:10px"></div>
-        <div class="planos-list">
-          <table class="table" id="tblPlanos">
-            <thead>
-              <tr>
-                <th>Plano</th>
-                <th>Mês atual</th>
-                <th>Mês anterior</th>
-                <th>Progresso</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <div class="row" style="margin-top:16px;justify-content:flex-end">
-      <button class="btn" id="btnCSV">Exportar CSV</button>
-      <button class="btn" id="btnPDF">Exportar PDF</button>
-    </div>
-  </div>
+  <section>
+    <h3>🧰 Manutenções Recorrentes</h3>
+    <div id="manutencoes"></div>
+  </section>
+</div>
 
 <script>
-/********************** CONFIG *************************/
-const ADMIN = { NAME: "ADMINISTRADOR", PASSWORD: "adm#2025" };
-
-const ENDPOINTS = {
-  METAS: "https://script.google.com/macros/s/AKfycbx3xmZeDxBLzCtZx7HnlIlJlhtTVqVNXugToptqxv1alhN2xSJpw-7TJrjzsL7DgtBg/exec",
-  VENDAS_DIA: "https://script.google.com/macros/s/AKfycbz9GQLrIB4oiX0jBQ7yaDO_IiMz3ER7lQT094sp5y2VUGgQWBaz3G1fa7s4ZbiWli_O/exec",
-  CANCELAMENTOS: "https://script.google.com/macros/s/AKfycbycmmXqkrASn5a2jpvTFSJDNVMrqPMAcrJivZIEnZhwTtJSN4J76qgtB1qIoNHw-T9j/exec",
-  TRAVAS: "https://script.google.com/macros/s/AKfycbyDGQ-srD7OFMORoRo7ZH2BDaz_tJVVlsqjdlLTI0OpkEKv3tQ5Ny02h3blo7GKjsFEIw/exec"
-};
-
-const CURRENCY = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
-const PALETTE = ['#7cb8ff','#77e0b5','#ffb84d','#ff6b6b','#9b8cff','#6de2c8','#ffd166','#f78da7','#d4a5a5','#a8e6cf','#ffd3b6','#cdb4db'];
-const PLANOS_VALIDOS = new Set([
-  'Fornecedores em geral (insumos)','Bebidas (adegas)','Cerveja/Long','Refrigerantes/água/suco',
-  'Frios/congelados','Doces e chocolates','Laticínios','Gelatto','Hortaliças (Padaria)','Hortifruti',
-  'Processados/assados (Panificação)','Salmão','Pescados (peixaria)','Chopp Brahma',
-  'Açougues','Aves','Mercados Locais LEM','Mercado (Materiais Não Consumo)'
-]);
-
-/********************** ESTADO *************************/
-const state = { 
-  isAdmin:false, 
-  selectedEmpresas:[],  // múltiplas
-  periodo:{inicio:null,fim:null}, 
-  data:null
-};
-let _vendasPrimeiro = true;
-let _cancPrimeiro   = true;
-
-/********************** UTIL *************************/
-const $ = (q)=>document.querySelector(q);
-function setBadgeEmpresa(names){
-  if (!names || !names.length) $('#empresaBadge').textContent='—';
-  else if (names.length===1) $('#empresaBadge').textContent = `${names[0]} • (ADM)`;
-  else $('#empresaBadge').innerHTML = `<span class="tag">AGRUPADO</span> ${names.length} empresas`;
-}
-function todayISO(){ return new Date().toISOString().slice(0,10) }
-function addDaysISO(iso, delta){ const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+delta); const y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2); return `${y}-${m}-${dd}`; }
-function buildURL(base, params){ const u = new URL(base); Object.entries(params||{}).forEach(([k,v])=>{ if(v!==undefined && v!==null && v!=='') u.searchParams.set(k,v) }); return u.toString(); }
-async function safeFetch(url){ const res = await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }
-function pct(num, den){ return den>0 ? (num/den)*100 : 0 }
-function clamp(n, min, max){ return Math.max(min, Math.min(max, n)) }
-function toCSV(rows){ return rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n') }
-function parseBR(n){ if(typeof n==='number') return n; if(n==null || n==='') return 0; return Number(String(n).replace(/\s|R\$/g,'').replace(/\./g,'').replace(',', '.')) || 0; }
-function fmtBR(iso){ if(!iso) return ''; const d = new Date(iso+'T00:00:00'); if (isNaN(d)) return iso; return d.toLocaleDateString('pt-BR'); }
-function fmtYM(ym){ if(!ym) return '—'; const [y,m]=ym.split('-'); return `${m}/${y}`; }
-function prevMonthYM(ym){ if(!ym || ym.length<7) return ''; const [y,m] = ym.split('-').map(Number); const d = new Date(y, (m-1)-1, 1); const yy = d.getFullYear(); const mm = ('0'+(d.getMonth()+1)).slice(-2); return `${yy}-${mm}`; }
-function _dayOfMonth(iso){ const d = new Date(iso+'T00:00:00'); return isNaN(d)? 0 : d.getDate(); }
-function _daysInMonth(iso){ const d = new Date(iso+'T00:00:00'); if(isNaN(d)) return 0; return new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(); }
-function calcularPrevisaoMensal(periodoISO, realizadoAteHoje){ const dia = _dayOfMonth(periodoISO), diasMes = _daysInMonth(periodoISO); if(!dia || !diasMes) return 0; return (realizadoAteHoje / dia) * diasMes; }
-function barHTML(label, value, max){
-  const p = clamp(pct(value,max),0,200).toFixed(1);
-  const theme = p>100? 'background:linear-gradient(90deg,var(--danger),#ff9a9a)' : 'background:linear-gradient(90deg,#7cb8ff,#77e0b5)';
-  return `<div class="row" style="justify-content:space-between"><div>${label}</div><div><b>${CURRENCY.format(value)}</b> / ${CURRENCY.format(max)} — <span class="pill ${p>100?'bad':'ok'}">${p}%</span></div></div>
-          <div class="progress"><i style="width:${Math.min(p,100)}%;${theme}"></i></div>`;
-}
-
-/********************** LOGIN *************************/
-const loginOverlay = $('#loginOverlay');
-const loadingOverlay = $('#loadingOverlay');
-
-$('#entrarBtn').addEventListener('click', doLogin);
-$('#senhaInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-document.addEventListener('keydown', (e)=>{ if (loginOverlay.style.display !== 'none' && e.key === 'Enter') doLogin(); });
-
-$('#btnSair').addEventListener('click', ()=>{
-  loginOverlay.style.display='flex';
-  state.isAdmin=false; state.selectedEmpresas=[];
-  setBadgeEmpresa(null);
-  closeEmpresaDropdown();
-});
-
-async function doLogin(){
-  const pw = $('#senhaInput').value;
-  const ok = (pw === ADMIN.PASSWORD);
-  if(!ok){ $('#loginErr').style.display='block'; return; }
-  $('#loginErr').style.display='none';
-  state.isAdmin = true;
-
-  loginOverlay.style.display='none';
-  $('#dtInicio').value = todayISO(); $('#dtFim').value = todayISO();
-
-  loadingOverlay.style.display='flex';
-  try { 
-    await carregarEmpresasDoPeriodo(); 
-    await refreshAll(); 
-  } finally { loadingOverlay.style.display='none'; }
-}
-
-/********************** MENU – EMPRESAS MULTI *****************/
-const multi = {
-  wrap: $('#empresaMultiWrap'),
-  btn:  $('#empresaMultiBtn'),
-  drop: $('#empresaDropdown'),
-  list: $('#empresaList'),
-  search: $('#empresaSearch'),
-  btnAll: $('#btnSelectAll'),
-  btnCancel: $('#btnCancelarEmpresas'),
-  btnApply: $('#btnAplicarEmpresas'),
-  tempSelected: new Set()
-};
-
-function openEmpresaDropdown(){
-  multi.drop.classList.add('show');
-  multi.tempSelected = new Set(state.selectedEmpresas);
-  multi.search.value=''; filterEmpresaList('');
-}
-function closeEmpresaDropdown(){ multi.drop.classList.remove('show'); }
-multi.btn.addEventListener('click', ()=> multi.drop.classList.contains('show') ? closeEmpresaDropdown() : openEmpresaDropdown());
-multi.btnCancel.addEventListener('click', closeEmpresaDropdown);
-document.addEventListener('click', (e)=>{ if(!multi.wrap.contains(e.target)) closeEmpresaDropdown(); });
-
-multi.search.addEventListener('input', (e)=> filterEmpresaList(e.target.value.trim().toLowerCase()));
-multi.btnAll.addEventListener('click', ()=>{
-  const items = multi.list.querySelectorAll('.item input[type=checkbox]');
-  const allChecked = Array.from(items).every(i=>i.checked);
-  items.forEach(i=>{ i.checked = !allChecked; i.dispatchEvent(new Event('change')); });
-});
-
-multi.btnApply.addEventListener('click', async ()=>{
-  state.selectedEmpresas = Array.from(multi.tempSelected);
-  setBadgeEmpresa(state.selectedEmpresas);
-  multi.btn.textContent = `Empresas (${state.selectedEmpresas.length}) ▾`;
-  closeEmpresaDropdown();
-  loadingOverlay.style.display='flex';
-  try { await refreshAll(); } finally { loadingOverlay.style.display='none'; }
-});
-
-function renderEmpresaList(empresas){
-  multi.list.innerHTML = '';
-  empresas.sort((a,b)=> a.localeCompare(b,'pt-BR'));
-  empresas.forEach(nome=>{
-    const id = 'emp_' + btoa(unescape(encodeURIComponent(nome))).replace(/=/g,'');
-    const div = document.createElement('div');
-    div.className='item';
-    div.innerHTML = `
-      <input id="${id}" type="checkbox" ${state.selectedEmpresas.includes(nome)?'checked':''}/>
-      <label for="${id}" style="cursor:pointer">${nome}</label>
-    `;
-    const chk = div.querySelector('input');
-    chk.addEventListener('change', (e)=>{
-      if(e.target.checked) multi.tempSelected.add(nome);
-      else multi.tempSelected.delete(nome);
-    });
-    multi.list.appendChild(div);
-  });
-}
-function filterEmpresaList(q){
-  const items = multi.list.querySelectorAll('.item');
-  items.forEach(it=>{
-    const txt = it.textContent.toLowerCase();
-    it.style.display = txt.includes(q) ? '' : 'none';
-  });
-}
-
-/********************** INTERAÇÕES GERAIS *************************/
-$('#btnHoje').addEventListener('click', async ()=>{
-  $('#dtInicio').value=todayISO(); $('#dtFim').value=todayISO();
-  loadingOverlay.style.display='flex';
-  try { await carregarEmpresasDoPeriodo(); await refreshAll(); } finally { loadingOverlay.style.display='none'; }
-});
-
-$('#btnAtualizar').addEventListener('click', async ()=>{
-  loadingOverlay.style.display='flex';
-  try { await carregarEmpresasDoPeriodo(); await refreshAll(); } finally { loadingOverlay.style.display='none'; }
-});
-
-$('#btnCSV').addEventListener('click', ()=>{
-  const rows = [
-    ['Empresas', state.selectedEmpresas.join(' + ') || '—'], 
-    ['Início', state.periodo.inicio], ['Fim', state.periodo.fim], [],
-    ['KPI','Valor','Obs'],
-    ['Meta Mensal', $('#kpiMeta').textContent, $('#kpiMetaSub').textContent],
-    ['Vendas do Período', $('#kpiDia').textContent, $('#kpiDiaSub').textContent],
-    ['Cancelamentos', $('#kpiCanc').textContent, $('#kpiCancSub').textContent],
-    ['Travas de Compras', $('#kpiTrava').textContent, $('#kpiTravaSub').textContent],
-  ];
-  const blob = new Blob([toCSV(rows)], {type:'text/csv;charset=utf-8;'}); const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `painel_agrupado.csv`; a.click();
-});
-document.getElementById('btnPDF').addEventListener('click', async ()=>{ await exportPDF(); });
-
-/********************** NORMALIZAÇÕES *************************/
-function normalizeMetasPayload(raw){
-  const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
-  return arr.map(r => ({
-    Data: (r?.Data || r?.data || '').slice(0,10),
-    Empresa: (r?.Empresa || r?.empresa || '').trim(),
-    Previsto: parseBR(r?.Previsto ?? r?.previsto),
-    Realizado: parseBR(r?.Realizado ?? r?.realizado),
-  }));
-}
-
-/********************** EMPRESAS POR PERÍODO *************************/
-async function carregarEmpresasDoPeriodo(){
-  // Usa METAS sem filtro para extrair empresas existentes no período/datas
-  const ini = $('#dtInicio').value || todayISO();
-  const fim = $('#dtFim').value || ini;
-
-  let metasPacked = [];
-  try { metasPacked = await safeFetch(ENDPOINTS.METAS); } catch(e){ metasPacked = []; }
-
-  const metas = normalizeMetasPayload(metasPacked);
-  const empresasSet = new Set(
-    metas.filter(m => (!m.Data || (m.Data >= ini && m.Data <= fim)) && m.Empresa)
-         .map(m => m.Empresa)
-  );
-  const empresas = Array.from(empresasSet);
-
-  // Se nada for encontrado nessa janela, tenta pegar todas conhecidas para não ficar vazio
-  if (empresas.length===0) {
-    metas.forEach(m => m.Empresa && empresasSet.add(m.Empresa));
-  }
-  const lista = Array.from(empresasSet);
-  renderEmpresaList(lista);
-
-  // Se ainda não há seleção, define todas por padrão
-  if (state.selectedEmpresas.length===0) {
-    state.selectedEmpresas = [...lista];
-    multi.btn.textContent = `Empresas (${state.selectedEmpresas.length}) ▾`;
-    setBadgeEmpresa(state.selectedEmpresas);
-  }
-}
-
-/********************** BUSCA E AGREGAÇÃO *************************/
-async function refreshAll(){
-  const empresas = state.selectedEmpresas;
-  if(!empresas || empresas.length===0) return;
-
-  state.periodo.inicio = $('#dtInicio').value || todayISO();
-  state.periodo.fim    = $('#dtFim').value    || $('#dtInicio').value || todayISO();
-
-  // Coletores de agregação
-  let somaMeta = 0, somaRealizado = 0, periodoMeta = (state.periodo.fim||todayISO()).slice(0,10);
-
-  // Vendas por dia (somar por data)
-  const vendasMap = new Map(); // dataISO -> total
-  let vendasInicio=null, vendasFim=null;
-
-  // Cancelamentos
-  let cancTotal = 0;
-  const cancItensMap = new Map(); // nome -> total
-
-  // Travas / Planos (somar campos e mapas)
-  let travaTotal=0, travaFor=0, gastoGeral=0, gastoFor=0;
-  const planosAtualMap = new Map(); // nome -> valor
-  const planosPrevMap  = new Map();
-
-  const periodoMes = (state.periodo.fim || todayISO()).slice(0,7);
-  const periodoPrev = prevMonthYM(periodoMes);
-
-  // Para desempenho, rodar fetch por empresa em paralelo
-  await Promise.all(empresas.map(async (empresa)=>{
-    // METAS (última por empresa)
-    let metasPacked=null;
-    try{
-      const urlUltima = buildURL(ENDPOINTS.METAS, { empresa, ultima: 'true' });
-      metasPacked = await safeFetch(urlUltima);
-    }catch(e){ metasPacked = null; }
-    if(!metasPacked || (Array.isArray(metasPacked) && metasPacked.length===0) || (Array.isArray(metasPacked?.data) && metasPacked.data.length===0)){
-      try{ metasPacked = await safeFetch(ENDPOINTS.METAS); }catch(e){ metasPacked = []; }
-    }
-    const metasArr = normalizeMetasPayload(metasPacked);
-    const validos = metasArr.filter(r => r.Empresa === empresa && r.Data);
-    if(validos.length){
-      const ultimaData = validos.reduce((m,r)=> r.Data>m? r.Data : m, validos[0].Data);
-      const rec = validos.find(r=>r.Data===ultimaData) || validos[validos.length-1];
-      somaMeta += rec.Previsto||0;
-      somaRealizado += rec.Realizado||0;
-      periodoMeta = ultimaData; // usa a mais recente encontrada (não atrapalha a previsão agregada)
-    }
-
-    // VENDAS DIA (filtradas pelo período e somadas por data)
-    try {
-      const serie = await safeFetch(buildURL(ENDPOINTS.VENDAS_DIA, { empresa }));
-      const arr = Array.isArray(serie) ? serie : (Array.isArray(serie?.data) ? serie.data : []);
-      const norm = arr.map(r => ({ 
-        dataISO: (r?.data || r?.Data || '').slice(0,10), 
-        total: Number(r?.total ?? r?.Total ?? r?.valor ?? 0)
-      })).filter(x => x.dataISO);
-
-      const ini = _vendasPrimeiro ? addDaysISO(todayISO(), -6) : state.periodo.inicio;
-      const fi  = _vendasPrimeiro ? todayISO() : state.periodo.fim;
-      const janela = norm.filter(x => x.dataISO >= ini && x.dataISO <= fi);
-
-      janela.forEach(x=>{
-        vendasMap.set(x.dataISO, (vendasMap.get(x.dataISO)||0) + (x.total||0));
-      });
-      if (!vendasInicio || janela[0]?.dataISO < vendasInicio) vendasInicio = janela[0]?.dataISO || vendasInicio;
-      if (!vendasFim || (janela[janela.length-1]?.dataISO || '') > vendasFim) vendasFim = janela[janela.length-1]?.dataISO || vendasFim;
-    } catch(e){ /* segue */ }
-
-    // CANCELAMENTOS (somar totais e itens)
-    try{
-      const params = _cancPrimeiro
-        ? { empresa, inicio: addDaysISO(todayISO(), -6), fim: todayISO() }
-        : { empresa, inicio: state.periodo.inicio, fim: state.periodo.fim };
-      const cancel = await safeFetch(buildURL(ENDPOINTS.CANCELAMENTOS, params));
-
-      const totalEmp = cancel?.total ?? (Array.isArray(cancel?.itens) ? cancel.itens.reduce((s,i)=>s+parseBR(i.total??i.valor??0),0) : 0);
-      cancTotal += parseBR(totalEmp);
-
-      (Array.isArray(cancel?.itens) ? cancel.itens.map(it => ({ nome: it.nome||it.item||'—', total: parseBR(it.total ?? it.valor) })) : [])
-        .forEach(it => cancItensMap.set(it.nome, (cancItensMap.get(it.nome)||0) + (it.total||0)));
-    }catch(e){ /* segue */ }
-
-    // TRAVAS (mês atual e anterior) — somas + mapas
-    try{
-      const atual = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa, periodo: periodoMes }));
-      const prev  = await safeFetch(buildURL(ENDPOINTS.TRAVAS, { empresa, periodo: periodoPrev }));
-
-      function addTravas(payload, isPrev=false){
-        if(!payload) return;
-        const tt = parseBR(payload?.travaTotal ?? payload?.trava_total ?? 0);
-        const tf = parseBR(payload?.travaCompras ?? payload?.trava_compras ?? payload?.travaFornec ?? 0);
-        let gg = parseBR(payload?.gastoGeral ?? payload?.totalFonte9 ?? payload?.fonte9Total ?? 0);
-        let gf = parseBR(payload?.gastoFornec ?? payload?.fornecedoresComprado ?? 0);
-
-        if ((gg === 0 || gf === 0) && Array.isArray(payload?.planosFonte9)) {
-          const planos = payload.planosFonte9.map(p => ({ nome: String(p.nome||''), valor: parseBR(p.valor) }));
-          gg = planos.reduce((s,p)=> s + Math.abs(p.valor||0), 0);
-          gf = planos.filter(p => PLANOS_VALIDOS.has(p.nome)).reduce((s,p)=> s + Math.abs(p.valor||0), 0);
-        }
-
-        if(!isPrev){ travaTotal += tt; travaFor += tf; gastoGeral += gg; gastoFor += gf; }
-
-        const pools = [];
-        if (Array.isArray(payload.planosFonte9)) pools.push(payload.planosFonte9);
-        if (Array.isArray(payload.planos)) pools.push(payload.planos);
-        if (Array.isArray(payload.contas)) pools.push(payload.contas);
-        if (Array.isArray(payload.planosContabeis)) pools.push(payload.planosContabeis);
-
-        (pools.flat() || []).forEach(it=>{
-          const nome = String(it?.nome || it?.plano || it?.conta || it?.descricao || '—').trim();
-          if(!nome || nome==='—') return;
-          const v = Math.abs(parseBR(it?.valor ?? it?.total ?? it?.soma ?? 0));
-          const map = isPrev ? planosPrevMap : planosAtualMap;
-          map.set(nome, (map.get(nome)||0) + v);
-        });
-      }
-      addTravas(atual, false);
-      addTravas(prev,  true);
-    }catch(e){ /* segue */ }
-  }));
-
-  _vendasPrimeiro = false; _cancPrimeiro = false;
-
-  // Monta objetos finais
-  const metasAgregado = { metaMensal: somaMeta, realizado: somaRealizado, periodo: periodoMeta };
-
-  // Vendas agregadas em série
-  const vendasLabels = Array.from(vendasMap.keys()).sort();
-  const vendasValores = vendasLabels.map(k => vendasMap.get(k)||0);
-  const vendasDia = {
-    inicio: vendasLabels[0] || vendasInicio || state.periodo.inicio,
-    fim:    vendasLabels[vendasLabels.length-1] || vendasFim || state.periodo.fim,
-    totalHoje: vendasValores.reduce((a,b)=>a+b,0),
-    labels: vendasLabels.map(fmtBR),
-    valores: vendasValores
-  };
-
-  // Cancelamentos agregados
-  const cancItens = Array.from(cancItensMap.entries()).map(([nome, total])=>({nome,total}));
-  cancItens.sort((a,b)=> b.total - a.total);
-  const cancelamentos = { total: cancTotal, itens: cancItens, inicio: state.periodo.inicio, fim: state.periodo.fim };
-
-  // Travas agregadas
-  const travasAtual = { travaTotal, travaCompras: travaFor, gastoGeral, gastoFornec: gastoFor, planosFonte9: Array.from(planosAtualMap.entries()).map(([nome,valor])=>({nome,valor})) };
-  const travasPrev  = { planosFonte9: Array.from(planosPrevMap.entries()).map(([nome,valor])=>({nome,valor})) };
-
-  state.data = { metas: metasAgregado, vendasDia, cancelamentos, travasAtual, travasPrev };
-
-  renderMetas(metasAgregado);
-  renderVendasDia(vendasDia);
-  renderCancelamentos(cancelamentos);
-  renderTravas(travasAtual);
-  renderPlanosAlertas(travasAtual, travasPrev, periodoMes, periodoPrev);
-}
-
-/********************** CELEBRAÇÃO (mesmo do seu) **********************/
-const cele = {
-  el: $('#celeOverlay'), back: $('#celeBack'), closeBtn: $('#celeClose'),
-  title: $('#celeTitle'), sub: $('#celeSub'), cvs: document.getElementById('celeCanvas'),
-  ctx: null, W: 0, H: 0, running: false, raf: 0, rockets: [], particles: [],
-  start(titulo, subtitulo){
-    if(this.running) return;
-    this.title.textContent = titulo || 'Meta atingida! 🎉';
-    this.sub.textContent = subtitulo || 'Parabéns, você bateu 100% da meta deste período.';
-    this.el.classList.add('show');
-    this.ctx = this.cvs.getContext('2d');
-    const resize = ()=>{ this.W = this.cvs.width = window.innerWidth; this.H = this.cvs.height = window.innerHeight; };
-    this._resize = resize; resize(); window.addEventListener('resize', resize);
-    this.running = true; this._spawnTimer = 0; this.loop();
-  },
-  stop(){ if(!this.running) return; this.running=false; cancelAnimationFrame(this.raf); window.removeEventListener('resize', this._resize); this.el.classList.remove('show'); this.rockets.length=0; this.particles.length=0; this.ctx && this.ctx.clearRect(0,0,this.W,this.H); },
-  loop(){
-    if(!this.running) return;
-    const now = performance.now(), ctx=this.ctx;
-    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0,0,this.W,this.H);
-    if(!this._last) this._last = now; const dt = (now - this._last) / 1000; this._last = now; this._spawnTimer += dt;
-    if(this._spawnTimer > 0.4){ this._spawnTimer=0; const n = 1 + Math.floor(Math.random()*3); for(let i=0;i<n;i++){ this.launchRocket(); } }
-    for(let i=this.rockets.length-1;i>=0;i--){ const r=this.rockets[i]; r.vy += 20 * dt; r.x += r.vx * dt; r.y += r.vy * dt; r.life -= dt;
-      ctx.beginPath(); ctx.arc(r.x, r.y, 2, 0, Math.PI*2); ctx.fillStyle = r.color; ctx.fill();
-      if(r.life<=0 || r.vy>0){ this.explode(r.x,r.y,r.color); this.rockets.splice(i,1); } }
-    for(let i=this.particles.length-1;i>=0;i--){ const p=this.particles[i]; p.vy += 80*dt; p.vx*=0.98; p.vy*=0.98; p.x+=p.vx*dt; p.y+=p.vy*dt; p.alpha -= p.fade * dt;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${Math.max(p.alpha,0)})`; ctx.fill();
-      if(p.alpha<=0 || p.y>this.H+20) this.particles.splice(i,1); }
-    this.raf = requestAnimationFrame(()=>this.loop());
-  },
-  launchRocket(){ const x = Math.random() * this.W * 0.8 + this.W*0.1, y = this.H + 10; const vx = (Math.random()-0.5) * 60, vy = - (180 + Math.random()*140); const hue = Math.floor(Math.random()*360); const color = `hsl(${hue}, 80%, 60%)`; this.rockets.push({x,y,vx,vy,life:0.8+Math.random()*0.6,color}); },
-  explode(x,y,color){
-    const tmp = document.createElement('canvas').getContext('2d'); tmp.fillStyle = color; tmp.fillRect(0,0,1,1);
-    const [r,g,b] = tmp.getImageData(0,0,1,1).data;
-    const count = 60 + Math.floor(Math.random()*40);
-    for(let i=0;i<count;i++){
-      const ang = Math.random()*Math.PI*2, spd = 60 + Math.random()*220;
-      this.particles.push({x,y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, r,g,b, size:1.5+Math.random()*1.5, alpha:1, fade:0.6+Math.random()*0.8});
-    }
-  }
-};
-document.getElementById('celeClose').addEventListener('click', ()=> cele.stop());
-document.getElementById('celeBack').addEventListener('click', ()=> cele.stop());
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') cele.stop(); });
-
-function maybeCelebrate(pReal, empresas, periodo, meta, realizado){
-  if(!(pReal>=100)) return;
-  const ym = String(periodo).slice(0,7) || 'mes';
-  const key = `cele:${(empresas||[]).join('+')}|${ym}`;
-  if(sessionStorage.getItem(key)) return;
-  const titulo = 'Meta atingida! 🎉';
-  const subt = `Realizado de ${CURRENCY.format(realizado)} sobre meta de ${CURRENCY.format(meta)} (${pReal.toFixed(1)}%). Excelente!`;
-  cele.start(titulo, subt);
-  sessionStorage.setItem(key,'1');
-  setTimeout(()=>cele.stop(), 10000);
-}
-
-/********************** RENDER – METAS *************************/
-let chartMetas;
-function renderMetas(data){
-  const meta = data?.metaMensal ?? 0;
-  const realizado = data?.realizado ?? 0;
-  const periodo = data?.periodo ?? "-";
-  const previsao = calcularPrevisaoMensal(periodo, realizado);
-
-  $('#kpiMeta').textContent = CURRENCY.format(meta);
-  const pReal = pct(realizado, meta);
-  const pPrev = pct(previsao, meta);
-  $('#kpiMetaSub').innerHTML =
-    `${periodo} — Realizado ${CURRENCY.format(realizado)} de ${CURRENCY.format(meta)} — ` +
-    `<span class="pill ${pReal>=100?'ok':pReal>=80?'neutral':'bad'}">${pReal.toFixed(1)}%</span>` +
-    `<br>Previsão ${CURRENCY.format(previsao)} — ` +
-    `<span class="pill ${pPrev>=100?'ok':pPrev>=80?'neutral':'bad'}">${pPrev.toFixed(1)}%</span>`;
-
-  if(meta>0) maybeCelebrate(pReal, state.selectedEmpresas, periodo, meta, realizado);
-
-  const ctx = document.getElementById('chartMetas');
-  const ds = {
-    labels:['Previsto (última data)','Realizado (última data)','Previsão (mês)'],
-    datasets:[{ label:'R$', data:[meta, realizado, previsao], borderWidth:2, backgroundColor:['#1b2652','#77e0b5','#ffb84d'], borderColor:'#88f0d4' }]
-  };
-  if(chartMetas){ chartMetas.data = ds; chartMetas.update(); }
-  else { chartMetas = new Chart(ctx, { type:'bar', data: ds, options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } } }); }
-}
-
-/********************** RENDER – VENDAS POR DIA *************************/
-let chartDia;
-function renderVendasDia(data){
-  const totalPeriodo = data?.totalHoje ?? 0;
-  $('#kpiDia').textContent = CURRENCY.format(totalPeriodo);
-  let sub = '—';
-  if (data?.inicio || data?.fim) {
-    const i = data.inicio ? fmtBR(data.inicio) : '—';
-    const f = data.fim ? fmtBR(data.fim) : '—';
-    sub = `Período ${i} a ${f}`;
-  }
-  $('#kpiDiaSub').textContent = sub;
-
-  const labels = data?.labels ?? [];
-  const valores = data?.valores ?? [];
-  const ctx = document.getElementById('chartDia');
-  const ds = { labels, datasets:[{ label:'R$ por dia (agrupado)', data: valores, tension:.3, fill:true, borderWidth:2, borderColor:'#7cb8ff', backgroundColor:'rgba(124,184,255,.18)' }] };
-  if(chartDia){ chartDia.data = ds; chartDia.update(); }
-  else { chartDia = new Chart(ctx, { type:'line', data: ds, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } } }); }
-}
-
-/********************** RENDER – CANCELAMENTOS *************************/
-let chartCanc;
-function renderCancelamentos(data){
-  const total = parseBR(data?.total ?? 0);
-  $('#kpiCanc').textContent = CURRENCY.format(total);
-
-  const totalVendas = state.data?.metas?.realizado ?? 0;
-  const pc = pct(total, totalVendas);
-  const subPeriodo = (data?.inicio || data?.fim) ? ` — ${fmtBR(data.inicio||'')} a ${fmtBR(data.fim||'')}` : '';
-  $('#kpiCancSub').innerHTML = `${CURRENCY.format(total)} no período${subPeriodo} — <span class="pill ${pc<3?'ok':pc<8?'neutral':'bad'}">${pc.toFixed(1)}%</span>`;
-
-  const itensList = Array.isArray(data?.itens) ? data.itens.slice(0) : [];
-  itensList.sort((a,b)=>b.total-a.total);
-  const top = itensList.slice(0,6);
-  const labels = top.map(t=>t.nome);
-  const valores = top.map(t=>t.total);
-
-  const ctx = document.getElementById('chartCanc');
-  const ds = { 
-    labels, 
-    datasets:[{ label:'R$', data: valores, borderWidth:1, borderColor:'rgba(255,255,255,.08)', backgroundColor: labels.map((_,i)=> PALETTE[i % PALETTE.length]), hoverOffset: 6 }] 
-  };
-  if(chartCanc){ chartCanc.data = ds; chartCanc.update(); }
-  else { chartCanc = new Chart(ctx, { type:'doughnut', data: ds, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom'} } } }); }
-
-  const tbody = document.querySelector('#tblCanc tbody');
-  tbody.innerHTML='';
-  itensList.forEach(it=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>❌ ${it.nome}</td><td style="white-space:nowrap">${CURRENCY.format(it.total)}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/********************** PLANOS / TRAVAS *************************/
-function extractPlanosMap(payload){
-  const map = new Map();
-  if(!payload) return map;
-  const pools = [];
-  if (Array.isArray(payload.planosFonte9)) pools.push(payload.planosFonte9);
-  if (Array.isArray(payload.planos)) pools.push(payload.planos);
-  if (Array.isArray(payload.contas)) pools.push(payload.contas);
-  if (Array.isArray(payload.planosContabeis)) pools.push(payload.planosContabeis);
-  (pools.flat() || []).forEach(it=>{
-    const nome = String(it?.nome || it?.plano || it?.conta || it?.descricao || '—').trim();
-    if(!nome || nome==='—') return;
-    const v = Math.abs(parseBR(it?.valor ?? it?.total ?? it?.soma ?? 0));
-    map.set(nome, (map.get(nome)||0) + v);
-  });
-  return map;
-}
-
-function renderPlanosAlertas(travasAtual, travasPrev, ymAtual, ymPrev){
-  const badge = document.getElementById('planosBadge');
-  badge.textContent = `${fmtYM(ymAtual)} vs ${fmtYM(ymPrev)}`;
-
-  const curr = extractPlanosMap(travasAtual);
-  const prev = extractPlanosMap(travasPrev);
-
-  const rows = [];
-  for (const [nome, vAtual] of curr.entries()){
-    const vPrev = prev.get(nome) || 0;
-    if (vPrev <= 0) continue;
-    const p = (vAtual / vPrev) * 100;
-    if (p >= 80){ rows.push({ nome, atual: vAtual, anterior: vPrev, perc: p }); }
-  }
-  rows.sort((a,b)=> b.perc - a.perc);
-
-  const tbody = document.querySelector('#tblPlanos tbody');
-  tbody.innerHTML = '';
-  if (!rows.length){
-    tbody.innerHTML = `<tr><td colspan="4"><div class="badge">Sem alertas — todos abaixo de 80% do mês anterior.</div></td></tr>`;
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzRw2S7LUaxZmOth8x3m1LHKQEPSgRyGOOcEZ93D5E_5EpQ5O9bd4aRJo9FzDMCujNb/exec';
+
+async function login() {
+  const user = usuario.value.trim();
+  const pass = senha.value.trim();
+  const res = await fetch(`${GAS_URL}?action=login&usuario=${user}&senha=${pass}`);
+  const data = await res.json();
+
+  if (!data.success) {
+    loginMsg.textContent = "Usuário ou senha incorretos.";
     return;
   }
-  rows.forEach(r=>{
-    const cls = r.perc>=100 ? 'bad' : 'neutral';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>📌 ${r.nome}</td>
-      <td style="white-space:nowrap">${CURRENCY.format(r.atual)}</td>
-      <td style="white-space:nowrap">${CURRENCY.format(r.anterior)}</td>
-      <td><span class="pill ${cls}">${r.perc.toFixed(0)}%</span></td>
+
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('painel').classList.remove('hidden');
+  document.getElementById('empresaNome').textContent = data.empresa;
+  carregarChecklist(data.empresa);
+  carregarManutencoes(data.empresa);
+  localStorage.setItem('empresa', data.empresa);
+}
+
+async function carregarChecklist(empresa) {
+  const res = await fetch(`${GAS_URL}?action=checklist&empresa=${empresa}`);
+  const data = await res.json();
+  const div = document.getElementById('checklist');
+  div.innerHTML = '';
+  data.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'task-item';
+    el.innerHTML = `
+      <span class="${t.status === 'Concluído' ? 'done':''}">${t.tarefa}</span>
+      <button onclick="atualizarStatus('${empresa}',${t.linha})">${t.status === 'Concluído' ? '✔':'Marcar'}</button>
     `;
-    tbody.appendChild(tr);
+    div.appendChild(el);
   });
 }
 
-function renderTravas(data){
-  const travaTotal = parseBR(data?.travaTotal ?? data?.trava_total ?? 0);
-  const travaFor   = parseBR(data?.travaCompras ?? data?.trava_compras ?? data?.travaFornec ?? 0);
-
-  let gastoGeral = parseBR(data?.gastoGeral ?? data?.totalFonte9 ?? data?.fonte9Total ?? 0);
-  let gastoFor   = parseBR(data?.gastoFornec ?? data?.fornecedoresComprado ?? 0);
-
-  if ((gastoGeral === 0 || gastoFor === 0) && Array.isArray(data?.planosFonte9)) {
-    const planos = data.planosFonte9.map(p => ({ nome: String(p.nome||''), valor: parseBR(p.valor) }));
-    gastoGeral = planos.reduce((s,p)=> s + Math.abs(p.valor||0), 0);
-    gastoFor   = planos.filter(p => PLANOS_VALIDOS.has(p.nome)).reduce((s,p)=> s + Math.abs(p.valor||0), 0);
-  }
-
-  const pTotal = pct(gastoGeral, travaTotal);
-  const pFor   = pct(gastoFor,   travaFor);
-  const pill = (p)=>`<span class="pill ${p>100?'bad':p>80?'neutral':'ok'}">${p.toFixed(1)}%</span>`;
-
-  $('#kpiTrava').textContent = CURRENCY.format(gastoGeral);
-  $('#kpiTravaSub').innerHTML = (travaTotal||travaFor) ? `
-    Geral (agrupado): <b>${CURRENCY.format(gastoGeral)}</b> de ${CURRENCY.format(travaTotal)} — ${pill(pTotal)}<br>
-    Fornecedores (agrupado): <b>${CURRENCY.format(gastoFor)}</b> de ${CURRENCY.format(travaFor)} — ${pill(pFor)}
-  ` : '—';
-
-  const wrap = document.getElementById('travasWrap');
-  wrap.innerHTML = '';
-  if (travaTotal || gastoGeral || travaFor || gastoFor){
-    wrap.insertAdjacentHTML('beforeend', barHTML('Trava Total de Pagamentos (agrupado)', gastoGeral, travaTotal));
-    wrap.insertAdjacentHTML('beforeend', barHTML('Trava Fornecedores (agrupado)',        gastoFor,   travaFor));
-  } else {
-    wrap.innerHTML = '<div class="badge">Sem dados de travas para o período.</div>';
-  }
+async function atualizarStatus(empresa, linha) {
+  await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${empresa}&linha=${linha}`);
+  carregarChecklist(empresa);
 }
 
-/********************** PDF *************************/
-async function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  try { if (window.Chart) Chart.helpers.each(Chart.instances, c=>{ if (c && typeof c.update==='function') c.update(0); }); } catch(e){}
-  const hideElems = [ '#loginOverlay', '#loadingOverlay', '#celeOverlay' ];
-  const prev = new Map();
-  hideElems.forEach(sel=>{ const el=document.querySelector(sel); if(el){ prev.set(el, el.style.display); el.style.display='none'; } });
-  const painel = document.getElementById('painel');
+async function registrarLancamento() {
+  const empresa = localStorage.getItem('empresa');
+  const categoria = document.getElementById('categoria').value;
+  const descricao = document.getElementById('descricao').value;
+  const qtd = document.getElementById('quantidade').value;
 
-  const empresasTxt  = (state.selectedEmpresas||[]).join(' + ') || '—';
-  const periodoTxt  = `${fmtBR(state.periodo.inicio)||'—'} a ${fmtBR(state.periodo.fim)||'—'}`;
-  const geradoEm    = new Date().toLocaleString('pt-BR');
+  if(!categoria || !descricao || !qtd){alert("Preencha todos os campos!");return;}
 
-  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-
-  const canvas = await html2canvas(painel, {
-    backgroundColor: '#0b1020',
-    scale: window.devicePixelRatio > 1 ? 2 : 1.8,
-    useCORS: true, allowTaint: true, logging: false,
-    windowWidth: document.documentElement.scrollWidth,
-    windowHeight: document.documentElement.scrollHeight
+  const res = await fetch(GAS_URL, {
+    method:'POST',
+    body: JSON.stringify({action:'registrarLancamento',empresa,categoria,descricao,qtd})
   });
-
-  hideElems.forEach(sel=>{ const el=document.querySelector(sel); if(el && prev.has(el)) el.style.display=prev.get(el); });
-
-  const imgData = canvas.toDataURL('image/png');
-  const imgW = pageW, imgH = canvas.height * imgW / canvas.width;
-  let heightLeft = imgH, position = 0;
-
-  function drawHeaderFooter(pageNumber){
-    pdf.setFillColor(11,16,32); pdf.rect(0, 0, pageW, 12, 'F');
-    pdf.setTextColor(190, 221, 255);
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.text('PAINEL DO GESTOR — GRUPO DV', 6, 8);
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
-    pdf.text(`Empresas: ${empresasTxt}`, pageW/2, 8, { align:'center' });
-    pdf.text(`Período: ${periodoTxt} • Gerado em: ${geradoEm}`, pageW-6, 8, { align:'right' });
-    pdf.setDrawColor(80, 100, 150); pdf.setLineWidth(0.2); pdf.line(6, pageH-10, pageW-6, pageH-10);
-    pdf.setTextColor(200, 210, 230); pdf.setFontSize(9);
-    pdf.text(`© ${new Date().getFullYear()} Grupo DV — Relatório do Painel`, 6, pageH-5);
-    pdf.text(`Página ${pageNumber}`, pageW-6, pageH-5, { align:'right' });
-  }
-
-  pdf.addImage(imgData, 'PNG', 0, position + 12, imgW, imgH);
-  drawHeaderFooter(1);
-  heightLeft -= pageH - 12;
-
-  let page = 2;
-  while (heightLeft > 0) {
-    pdf.addPage();
-    position = - (imgH - heightLeft);
-    pdf.addImage(imgData, 'PNG', 0, position + 12, imgW, imgH);
-    drawHeaderFooter(page);
-    heightLeft -= pageH - 12;
-    page++;
-  }
-
-  const nomeArquivo = `Relatorio_agrupado_${(state.periodo.inicio||'')}_${(state.periodo.fim||'')}.pdf`;
-  pdf.save(nomeArquivo);
+  const data = await res.json();
+  alert(data.msg);
+  categoria.value='';descricao.value='';quantidade.value='';
 }
 
-/********************** INICIALIZA *************************/
-window.addEventListener('load', ()=>{
-  $('#dtInicio').value = todayISO(); $('#dtFim').value = todayISO();
-});
+async function carregarManutencoes(empresa){
+  const res = await fetch(`${GAS_URL}?action=manutencoes&empresa=${empresa}`);
+  const data = await res.json();
+  const div = document.getElementById('manutencoes');
+  div.innerHTML = '';
+  data.forEach(m=>{
+    const el=document.createElement('div');
+    el.className='task-item';
+    el.innerHTML=`
+      <span class="${m.status==='Feita'?'done':''}">${m.tarefa}</span>
+      <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status==='Feita'?'✔':'Feita'}</button>`;
+    div.appendChild(el);
+  });
+}
+
+async function atualizarManutencao(empresa, linha){
+  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${empresa}&linha=${linha}`);
+  carregarManutencoes(empresa);
+}
 </script>
 </body>
 </html>
