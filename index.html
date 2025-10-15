@@ -41,7 +41,7 @@ button:hover{opacity:0.9;}
   <h2>Identificação do Gerente</h2>
   <label>Selecione o Gerente:</label>
   <select id="usuarioSelect">
-    <option value="">Carregando...</option>
+    <option value="">Selecione...</option>
   </select>
 
   <label>Senha:</label>
@@ -83,51 +83,72 @@ button:hover{opacity:0.9;}
 </div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFoYzlH9r4mykahcFuEjFcgC_RH9F8YWsQWlCY-obuY3MT49NnFjPREijJVbIttFIL/exec';
+/* URLs dos endpoints */
+const LOGIN_URL = 'https://gerentes.clena.com.br/api/login'; // 🔹 coloque aqui sua URL Vercel
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5XosN21wYpRLWIV-B4Wo70oZX6ozXhP4y5jWj946w4pyID4cZjLZxzV9Rg6bdtq_w/exec';
 
-// 🔹 Ao carregar, lista os gerentes da aba USUARIOS
-window.onload = async () => {
-  const res = await fetch(`${GAS_URL}?action=listarGerentes`);
-  const data = await res.json();
-  const select = document.getElementById('usuarioSelect');
-  select.innerHTML = '<option value="">Selecione...</option>';
-  data.forEach(g => {
+/* Lista fixa de usuários no front */
+const usuarios = [
+  { id: "MERCATTO_DHEURE", nome: "Dheure (Mercatto)" },
+  { id: "MERCATTO_YURI", nome: "Yuri (Mercatto)" },
+  { id: "MERCATTO_GLEIDSA", nome: "Gleidsa (Mercatto)" },
+  { id: "MERCATTO_JAQUELINE", nome: "Jaqueline (Mercatto)" },
+  { id: "MERCATTO_IVANIO", nome: "Ivanio (Mercatto)" },
+  { id: "DELICIA_RUAN", nome: "Ruan (Delícia)" },
+  { id: "DELICIA_VALCIR", nome: "Valcir (Delícia)" },
+];
+
+/* Preenche o select de usuários */
+window.onload = () => {
+  const sel = document.getElementById('usuarioSelect');
+  usuarios.forEach(u => {
     const opt = document.createElement('option');
-    opt.value = g.usuario;
-    opt.textContent = `${g.usuario} (${g.empresa})`;
-    select.appendChild(opt);
+    opt.value = u.id;
+    opt.textContent = u.nome;
+    sel.appendChild(opt);
   });
 };
 
+/* Login */
 async function login() {
-  const user = document.getElementById('usuarioSelect').value.trim();
-  const pass = senha.value.trim();
-  if (!user || !pass) {
+  const usuario = document.getElementById('usuarioSelect').value;
+  const senha = document.getElementById('senha').value.trim();
+  if (!usuario || !senha) {
     loginMsg.textContent = "Preencha todos os campos.";
     return;
   }
 
-  const res = await fetch(`${GAS_URL}?action=login&usuario=${user}&senha=${pass}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
+    const data = await res.json();
 
-  if (!data.success) {
-    loginMsg.textContent = "Usuário ou senha incorretos.";
-    return;
+    if (!data.success) {
+      loginMsg.textContent = data.msg || "Usuário ou senha incorretos.";
+      return;
+    }
+
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('painel').classList.remove('hidden');
+    document.getElementById('empresaNome').textContent = data.empresa;
+    localStorage.setItem('empresa', data.empresa);
+
+    carregarChecklist(data.empresa);
+    carregarManutencoes(data.empresa);
+  } catch (err) {
+    loginMsg.textContent = "Erro de conexão com o servidor.";
   }
-
-  document.getElementById('login').classList.add('hidden');
-  document.getElementById('painel').classList.remove('hidden');
-  document.getElementById('empresaNome').textContent = data.empresa;
-  carregarChecklist(data.empresa);
-  carregarManutencoes(data.empresa);
-  localStorage.setItem('empresa', data.empresa);
 }
 
+/* Checklist */
 async function carregarChecklist(empresa) {
-  const res = await fetch(`${GAS_URL}?action=checklist&empresa=${empresa}`);
+  const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);
   const data = await res.json();
   const div = document.getElementById('checklist');
   div.innerHTML = '';
+  if (!data.length) {
+    div.innerHTML = '<p>Nenhuma tarefa cadastrada.</p>';
+    return;
+  }
   data.forEach(t => {
     const el = document.createElement('div');
     el.className = 'task-item';
@@ -139,45 +160,64 @@ async function carregarChecklist(empresa) {
   });
 }
 
+/* Atualiza status da tarefa */
 async function atualizarStatus(empresa, linha) {
-  await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${empresa}&linha=${linha}`);
+  await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
   carregarChecklist(empresa);
 }
 
+/* Registro de desperdícios/sobras/devoluções */
 async function registrarLancamento() {
   const empresa = localStorage.getItem('empresa');
   const categoria = document.getElementById('categoria').value;
   const descricao = document.getElementById('descricao').value;
   const qtd = document.getElementById('quantidade').value;
-
-  if(!categoria || !descricao || !qtd){alert("Preencha todos os campos!");return;}
+  if (!categoria || !descricao || !qtd) {
+    alert("Preencha todos os campos!");
+    return;
+  }
 
   const res = await fetch(GAS_URL, {
-    method:'POST',
-    body: JSON.stringify({action:'registrarLancamento',empresa,categoria,descricao,qtd})
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'registrarLancamento',
+      empresa,
+      categoria,
+      descricao,
+      qtd
+    })
   });
   const data = await res.json();
   alert(data.msg);
-  categoria.value='';descricao.value='';quantidade.value='';
+  document.getElementById('categoria').value = '';
+  document.getElementById('descricao').value = '';
+  document.getElementById('quantidade').value = '';
 }
 
-async function carregarManutencoes(empresa){
-  const res = await fetch(`${GAS_URL}?action=manutencoes&empresa=${empresa}`);
+/* Manutenções */
+async function carregarManutencoes(empresa) {
+  const res = await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`);
   const data = await res.json();
   const div = document.getElementById('manutencoes');
   div.innerHTML = '';
-  data.forEach(m=>{
-    const el=document.createElement('div');
-    el.className='task-item';
-    el.innerHTML=`
-      <span class="${m.status==='Feita'?'done':''}">${m.tarefa}</span>
-      <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status==='Feita'?'✔':'Feita'}</button>`;
+  if (!data.length) {
+    div.innerHTML = '<p>Nenhuma manutenção cadastrada.</p>';
+    return;
+  }
+  data.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'task-item';
+    el.innerHTML = `
+      <span class="${m.status === 'Feita' ? 'done':''}">${m.tarefa}</span>
+      <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status === 'Feita' ? '✔':'Feita'}</button>
+    `;
     div.appendChild(el);
   });
 }
 
-async function atualizarManutencao(empresa, linha){
-  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${empresa}&linha=${linha}`);
+/* Atualiza manutenção */
+async function atualizarManutencao(empresa, linha) {
+  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
   carregarManutencoes(empresa);
 }
 </script>
