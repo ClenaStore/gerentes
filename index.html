@@ -36,16 +36,22 @@ button:hover{opacity:0.9;}
 
 <header>🧭 Painel de Gerência</header>
 
+<!-- LOGIN -->
 <div id="login" class="container">
   <h2>Identificação do Gerente</h2>
-  <label>Usuário:</label>
-  <input type="text" id="usuario">
+  <label>Selecione o Gerente:</label>
+  <select id="usuarioSelect">
+    <option value="">Carregando...</option>
+  </select>
+
   <label>Senha:</label>
   <input type="password" id="senha">
+
   <button onclick="login()">Entrar</button>
   <p id="loginMsg" style="color:red"></p>
 </div>
 
+<!-- PAINEL PRINCIPAL -->
 <div id="painel" class="container hidden">
   <h2 id="empresaNome"></h2>
 
@@ -77,11 +83,30 @@ button:hover{opacity:0.9;}
 </div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbx6H0BS-d1UCYtEhVZYqpNkBL4UfEmgOPEJ3TzYekFr-_MtPr0A4ilpkfz2FKOBXW2S/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHT6-_a1HbovC7A1DYMH5e5hrf8pM063OKB9pV0Ezr3EjJdTNn3pIj7zPy6Y1MvU8S/exec';
+
+// 🔹 Ao carregar, lista os gerentes da aba USUARIOS
+window.onload = async () => {
+  const res = await fetch(`${GAS_URL}?action=listarGerentes`);
+  const data = await res.json();
+  const select = document.getElementById('usuarioSelect');
+  select.innerHTML = '<option value="">Selecione...</option>';
+  data.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.usuario;
+    opt.textContent = `${g.usuario} (${g.empresa})`;
+    select.appendChild(opt);
+  });
+};
 
 async function login() {
-  const user = usuario.value.trim();
+  const user = document.getElementById('usuarioSelect').value.trim();
   const pass = senha.value.trim();
+  if (!user || !pass) {
+    loginMsg.textContent = "Preencha todos os campos.";
+    return;
+  }
+
   const res = await fetch(`${GAS_URL}?action=login&usuario=${user}&senha=${pass}`);
   const data = await res.json();
 
