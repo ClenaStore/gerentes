@@ -1,95 +1,187 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Painel de Gerência - Delícia & Mercatto</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f1724">
-<style>
-:root {
-  --bg:#0f1724;
-  --card:#1e293b;
-  --accent:#ff8f1f;
-  --text:#fff;
-  --muted:#9aa6b2;
-  --success:#16a34a;
-  --error:#ef4444;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);height:100%;}
-header{
-  background:var(--card);
-  padding:15px;
-  text-align:center;
-  font-size:20px;
-  color:var(--accent);
-  box-shadow:0 2px 10px rgba(0,0,0,0.4);
-  position:sticky;top:0;z-index:10;
-}
-.container{padding:15px;max-width:600px;margin:auto;}
-h2,h3{color:var(--accent);margin:8px 0;}
-label{display:block;margin:8px 0 4px;}
-input,select,textarea,button{
-  width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;
-  background:#334155;color:#fff;font-size:14px;
-}
-button{cursor:pointer;background:var(--accent);color:#000;font-weight:600;transition:0.2s;}
-button:hover{opacity:0.9;}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:15px;
-}
-.card{
-  background:var(--card);
-  padding:20px;
-  border-radius:12px;
-  text-align:center;
-  box-shadow:0 4px 15px rgba(0,0,0,0.3);
-  transition:transform 0.2s ease;
-}
-.card:hover{transform:scale(1.03);}
-.card button{
-  width:100%;margin-top:10px;background:var(--accent);
-}
-.hidden{display:none;}
-.task-item{
-  background:#334155;
-  margin-bottom:6px;
-  padding:8px 10px;
-  border-radius:6px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.done{color:var(--success);text-decoration:line-through;}
-a.link-btn{
-  display:block;
-  text-decoration:none;
-  background:var(--accent);
-  color:#000;
-  text-align:center;
-  padding:12px;
-  border-radius:6px;
-  font-weight:600;
-  margin-bottom:8px;
-}
-footer{color:var(--muted);text-align:center;padding:10px 0;font-size:12px;}
-#relatorios{background:var(--bg);padding:20px;}
-.relatorio-card{
-  background:var(--card);
-  border-radius:10px;
-  margin-bottom:15px;
-  padding:15px;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Painel de Gerência - Delícia & Mercatto</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f1724" />
+  <style>
+    :root {
+      --bg: #0f1724;
+      --card: #1e293b;
+      --accent: #ff8f1f;
+      --text: #fff;
+      --muted: #9aa6b2;
+      --success: #16a34a;
+      --error: #ef4444;
+      --overlay-bg: rgba(0, 0, 0, 0.6);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100%;
+      overflow: hidden;
+    }
+    header {
+      background: var(--card);
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      color: var(--accent);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .container {
+      padding: 15px;
+      max-width: 600px;
+      margin: auto;
+      overflow-y: auto;
+      height: calc(100vh - 60px); /* header altura aproximada */
+    }
+    h2, h3 {
+      color: var(--accent);
+      margin: 8px 0;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #334155;
+      color: #fff;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: transform 0.15s ease;
+    }
+    .card:hover {
+      transform: scale(1.02);
+    }
+    .card button {
+      width: 100%;
+      margin-top: 10px;
+      background: var(--accent);
+    }
+    .hidden {
+      display: none;
+    }
+    .task-item {
+      background: #334155;
+      margin-bottom: 6px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .done {
+      color: var(--success);
+      text-decoration: line-through;
+    }
+    a.link-btn {
+      display: block;
+      text-decoration: none;
+      background: var(--accent);
+      color: #000;
+      text-align: center;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 10px 0;
+      font-size: 12px;
+    }
+    #relatorios {
+      background: var(--bg);
+      padding: 20px 0;
+    }
+    .relatorio-card {
+      background: var(--card);
+      border-radius: 10px;
+      margin-bottom: 15px;
+      padding: 15px;
+    }
+
+    /* Overlay de carregamento */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--overlay-bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s;
+    }
+    #overlay.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+    #overlay .spinner {
+      border: 6px solid #334155;
+      border-top: 6px solid var(--accent);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
 
 <header>🧭 Painel de Gerência</header>
+
+<!-- Overlay de carregamento -->
+<div id="overlay">
+  <div class="spinner"></div>
+</div>
 
 <!-- LOGIN -->
 <div id="login" class="container">
@@ -100,16 +192,15 @@ footer{color:var(--muted);text-align:center;padding:10px 0;font-size:12px;}
       <option value="">Selecione...</option>
     </select>
     <label>Senha:</label>
-    <input type="password" id="senha" placeholder="Digite sua senha">
+    <input type="password" id="senha" placeholder="Digite sua senha" />
     <button onclick="login()">Entrar</button>
-    <p id="loginMsg" style="color:var(--error);font-size:14px;"></p>
+    <p id="loginMsg" style="color: var(--error); font-size: 14px;"></p>
   </div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="painel" class="container hidden">
   <h2 id="empresaNome"></h2>
-
   <div class="grid">
     <div class="card" onclick="abrirModulo('checklist')">
       <h3>✅ Check-list</h3>
@@ -117,7 +208,7 @@ footer{color:var(--muted);text-align:center;padding:10px 0;font-size:12px;}
     </div>
     <div class="card" onclick="abrirModulo('manutencoes')">
       <h3>🧰 Manutenções</h3>
-      <p>Verificar e marcar concluídas</p>
+      <p>Gestão das manutenções</p>
     </div>
     <div class="card" onclick="abrirModulo('desperdicios')">
       <h3>🥣 Desperdícios</h3>
@@ -125,166 +216,260 @@ footer{color:var(--muted);text-align:center;padding:10px 0;font-size:12px;}
     </div>
     <div class="card" onclick="abrirModulo('relatorios')">
       <h3>📅 Histórico do Dia</h3>
-      <p>Relatórios e registros</p>
+      <p>Relatórios completos</p>
     </div>
     <div class="card" onclick="abrirModulo('links')">
       <h3>🌐 Acessos Rápidos</h3>
       <p>Sites e Painéis</p>
     </div>
   </div>
-
   <footer>©2025 Grupo Delícia & Mercatto</footer>
 </div>
 
-<!-- MÓDULOS -->
+<!-- MÓDULO (conteúdo carregado) -->
 <div id="modulo" class="container hidden"></div>
 
 <script>
-const LOGIN_URL = 'https://gerentes.clena.com.br/api/login';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5XosN21wYpRLWIV-B4Wo70oZX6ozXhP4y5jWj946w4pyID4cZjLZxzV9Rg6bdtq_w/exec';
-const usuarios = [
-  { id: "MERCATTO_DHEURE", nome: "Dheure (Mercatto)" },
-  { id: "MERCATTO_YURI", nome: "Yuri (Mercatto)" },
-  { id: "MERCATTO_GLEIDSA", nome: "Gleidsa (Mercatto)" },
-  { id: "MERCATTO_JAQUELINE", nome: "Jaqueline (Mercatto)" },
-  { id: "MERCATTO_IVANIO", nome: "Ivanio (Mercatto)" },
-  { id: "DELICIA_RUAN", nome: "Ruan (Delícia)" },
-  { id: "DELICIA_VALCIR", nome: "Valcir (Delícia)" },
-];
+  const LOGIN_URL = 'https://gerentes.clena.com.br/api/login';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5XosN21wYpRLWIV-B4Wo70oZX6ozXhP4y5jWj946w4pyID4cZjLZxzV9Rg6bdtq_w/exec';
 
-window.onload = () => {
-  const sel = document.getElementById('usuarioSelect');
-  usuarios.forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = u.id;
-    opt.textContent = u.nome;
-    sel.appendChild(opt);
-  });
-};
+  const usuarios = [
+    { id: "MERCATTO_DHEURE", nome: "Dheure (Mercatto)" },
+    { id: "MERCATTO_YURI", nome: "Yuri (Mercatto)" },
+    { id: "MERCATTO_GLEIDSA", nome: "Gleidsa (Mercatto)" },
+    { id: "MERCATTO_JAQUELINE", nome: "Jaqueline (Mercatto)" },
+    { id: "MERCATTO_IVANIO", nome: "Ivanio (Mercatto)" },
+    { id: "DELICIA_RUAN", nome: "Ruan (Delícia)" },
+    { id: "DELICIA_VALCIR", nome: "Valcir (Delícia)" },
+  ];
 
-async function login() {
-  const usuario = document.getElementById('usuarioSelect').value;
-  const senha = document.getElementById('senha').value.trim();
-  const msg = document.getElementById('loginMsg');
-  if (!usuario || !senha) return msg.textContent = "Preencha todos os campos.";
-  msg.textContent = "Validando...";
-
-  try {
-    const res = await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
-    const data = await res.json();
-    if (!data.success) return msg.textContent = data.msg || "Usuário ou senha incorretos.";
-
-    document.getElementById('login').classList.add('hidden');
-    document.getElementById('painel').classList.remove('hidden');
-    document.getElementById('empresaNome').textContent = data.empresa;
-    localStorage.setItem('empresa', data.empresa);
-  } catch {
-    msg.textContent = "Erro de conexão.";
+  // Funções de overlay
+  function showOverlay() {
+    document.getElementById('overlay').classList.add('visible');
   }
-}
+  function hideOverlay() {
+    document.getElementById('overlay').classList.remove('visible');
+  }
 
-/* ABRIR MÓDULOS */
-function abrirModulo(tipo) {
-  document.getElementById('painel').classList.add('hidden');
-  const mod = document.getElementById('modulo');
-  mod.classList.remove('hidden');
-  const empresa = localStorage.getItem('empresa');
+  window.onload = () => {
+    const sel = document.getElementById('usuarioSelect');
+    usuarios.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = u.nome;
+      sel.appendChild(opt);
+    });
 
-  if (tipo === 'checklist') renderChecklist(empresa);
-  if (tipo === 'manutencoes') renderManutencoes(empresa);
-  if (tipo === 'desperdicios') renderDesperdicios(empresa);
-  if (tipo === 'relatorios') renderRelatorios(empresa);
-  if (tipo === 'links') renderLinks();
-}
+    // Se já tiver salvo no storage, tentar login automático
+    const savedUser = localStorage.getItem('gerente_id');
+    const savedPass = localStorage.getItem('gerente_senha');
+    if (savedUser && savedPass) {
+      document.getElementById('usuarioSelect').value = savedUser;
+      document.getElementById('senha').value = savedPass;
+      login();
+    }
+  };
 
-/* VOLTAR */
-function voltar() {
-  document.getElementById('modulo').classList.add('hidden');
-  document.getElementById('painel').classList.remove('hidden');
-}
+  async function login() {
+    const usuario = document.getElementById('usuarioSelect').value;
+    const senha = document.getElementById('senha').value.trim();
+    const msg = document.getElementById('loginMsg');
 
-/* ✅ CHECKLIST */
-async function renderChecklist(empresa) {
-  const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);
-  const data = await res.json();
-  const mod = document.getElementById('modulo');
-  mod.innerHTML = `<div class='card'><h3>✅ Check-list Diário</h3>
-  ${data.length?data.map(t=>`
-  <div class='task-item'><span class="${t.status==='Concluído'?'done':''}">${t.tarefa}</span>
-  <button onclick="atualizarStatus('${empresa}',${t.linha})">${t.status==='Concluído'?'✔':'Marcar'}</button></div>`).join(''):'<p>Nenhuma tarefa cadastrada.</p>'}
-  <button onclick="voltar()">⬅ Voltar</button></div>`;
-}
-async function atualizarStatus(empresa,linha){
-  await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
-  renderChecklist(empresa);
-}
+    if (!usuario || !senha) {
+      msg.textContent = "Preencha todos os campos.";
+      return;
+    }
+    msg.textContent = "";
+    showOverlay();
+    try {
+      const res = await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
+      const data = await res.json();
+      if (!data.success) {
+        msg.textContent = data.msg || "Usuário ou senha incorretos.";
+        hideOverlay();
+        return;
+      }
 
-/* 🧰 MANUTENÇÕES */
-async function renderManutencoes(empresa){
-  const res = await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`);
-  const data = await res.json();
-  const mod=document.getElementById('modulo');
-  mod.innerHTML=`<div class='card'><h3>🧰 Manutenções</h3>
-  ${data.length?data.map(m=>`
-  <div class='task-item'><span class="${m.status==='Feita'?'done':''}">${m.tarefa}</span>
-  <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status==='Feita'?'✔':'Feita'}</button></div>`).join(''):'<p>Nenhuma manutenção cadastrada.</p>'}
-  <button onclick="voltar()">⬅ Voltar</button></div>`;
-}
-async function atualizarManutencao(empresa,linha){
-  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
-  renderManutencoes(empresa);
-}
+      // salvar para não pedir de novo
+      localStorage.setItem('gerente_id', usuario);
+      localStorage.setItem('gerente_senha', senha);
 
-/* 🥣 DESPERDICIOS */
-function renderDesperdicios(empresa){
-  const mod=document.getElementById('modulo');
-  mod.innerHTML=`<div class='card'><h3>🥣 Registrar Desperdícios</h3>
-  <label>Categoria:</label>
-  <select id='categoria'>
-    <option value=''>Selecione...</option>
-    <option>Desperdício</option>
-    <option>Sobra</option>
-    <option>Devolução</option>
-  </select>
-  <label>Descrição:</label><textarea id='descricao' placeholder='Descreva o ocorrido'></textarea>
-  <label>Quantidade / Valor:</label><input type='text' id='quantidade' placeholder='Ex: 2kg ou R$30,00'>
-  <button onclick="registrarLancamento()">Registrar</button>
-  <button onclick="voltar()">⬅ Voltar</button></div>`;
-}
-async function registrarLancamento(){
-  const empresa=localStorage.getItem('empresa');
-  const categoria=document.getElementById('categoria').value;
-  const descricao=document.getElementById('descricao').value;
-  const qtd=document.getElementById('quantidade').value;
-  if(!categoria||!descricao||!qtd)return alert("Preencha todos os campos!");
-  const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria,descricao,qtd})});
-  const data=await res.json();alert(data.msg);voltar();
-}
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('painel').classList.remove('hidden');
+      document.getElementById('empresaNome').textContent = data.empresa;
+      localStorage.setItem('empresa', data.empresa);
 
-/* 📅 RELATÓRIOS */
-async function renderRelatorios(empresa){
-  const resC=await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);
-  const resM=await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`);
-  const res=resC.json();const man=resM.json();
-  const [check,manut]=await Promise.all([res,man]);
-  const mod=document.getElementById('modulo');
-  mod.innerHTML=`<div id='relatorios'>
-  <h2>📅 Histórico do Dia</h2>
-  <div class='relatorio-card'><h3>✅ Check-list</h3>${check.filter(c=>c.status==='Concluído').length?check.filter(c=>c.status==='Concluído').map(c=>`<p>✔ ${c.tarefa}</p>`).join(''):'<p>Nenhuma tarefa concluída.</p>'}</div>
-  <div class='relatorio-card'><h3>🧰 Manutenções</h3>${manut.filter(m=>m.status==='Feita').length?manut.filter(m=>m.status==='Feita').map(m=>`<p>🔧 ${m.tarefa}</p>`).join(''):'<p>Nenhuma manutenção finalizada.</p>'}</div>
-  <p style='text-align:center;'><button onclick="voltar()">⬅ Voltar</button></p></div>`;
-}
+      hideOverlay();
+    } catch (err) {
+      msg.textContent = "Erro de conexão.";
+      hideOverlay();
+    }
+  }
 
-/* 🌐 LINKS */
-function renderLinks(){
-  const mod=document.getElementById('modulo');
-  mod.innerHTML=`<div class='card'><h3>🌐 Acessos Rápidos</h3>
-  <a class='link-btn' href='https://mercattodelicia.com.br' target='_blank'>🌎 Mercatto Delícia</a>
-  <a class='link-btn' href='https://deliciagourmet.com.br' target='_blank'>🍰 Delícia Gourmet</a>
-  <a class='link-btn' href='https://forms.gle/' target='_blank'>📝 Formulário</a>
-  <a class='link-btn' href='https://app.powerbi.com/' target='_blank'>📊 Power BI</a>
-  <button onclick='voltar()'>⬅ Voltar</button></div>`;
-}
+  function abrirModulo(tipo) {
+    document.getElementById('painel').classList.add('hidden');
+    const mod = document.getElementById('modulo');
+    mod.classList.remove('hidden');
+    const empresa = localStorage.getItem('empresa');
+
+    // Carregar em background os dados necessários
+    if (tipo === 'checklist') renderChecklist(empresa);
+    if (tipo === 'manutencoes') renderManutencoes(empresa);
+    if (tipo === 'desperdicios') renderDesperdicios(empresa);
+    if (tipo === 'relatorios') renderRelatorios(empresa);
+    if (tipo === 'links') renderLinks();
+  }
+
+  function voltar() {
+    document.getElementById('modulo').classList.add('hidden');
+    document.getElementById('painel').classList.remove('hidden');
+  }
+
+  /* CHECKLIST */
+  async function renderChecklist(empresa) {
+    showOverlay();
+    const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);
+    const data = await res.json();
+    hideOverlay();
+
+    const mod = document.getElementById('modulo');
+    let html = `<div class="card"><h3>✅ Check-list Diário</h3>`;
+    if (data.length) {
+      data.forEach(t => {
+        html += `<div class="task-item">
+          <span class="${t.status === 'Concluído' ? 'done' : ''}">${t.tarefa}</span>
+          <button onclick="atualizarStatus('${empresa}',${t.linha})">${t.status === 'Concluído' ? '✔' : 'Marcar'}</button>
+        </div>`;
+      });
+    } else {
+      html += `<p>Nenhuma tarefa cadastrada.</p>`;
+    }
+    html += `<button onclick="voltar()">⬅ Voltar</button></div>`;
+    mod.innerHTML = html;
+  }
+  async function atualizarStatus(empresa, linha) {
+    showOverlay();
+    await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
+    hideOverlay();
+    renderChecklist(empresa);
+  }
+
+  /* MANUTENÇÕES */
+  async function renderManutencoes(empresa) {
+    showOverlay();
+    const res = await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`);
+    const data = await res.json();
+    hideOverlay();
+
+    const mod = document.getElementById('modulo');
+    let html = `<div class="card"><h3>🧰 Manutenções</h3>`;
+    if (data.length) {
+      data.forEach(m => {
+        html += `<div class="task-item">
+          <span class="${m.status === 'Feita' ? 'done' : ''}">${m.tarefa}</span>
+          <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status === 'Feita' ? '✔' : 'Feita'}</button>
+        </div>`;
+      });
+    } else {
+      html += `<p>Nenhuma manutenção cadastrada.</p>`;
+    }
+    html += `<button onclick="voltar()">⬅ Voltar</button></div>`;
+    mod.innerHTML = html;
+  }
+  async function atualizarManutencao(empresa, linha) {
+    showOverlay();
+    await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
+    hideOverlay();
+    renderManutencoes(empresa);
+  }
+
+  /* DESPERDÍCIOS */
+  function renderDesperdicios(empresa) {
+    const mod = document.getElementById('modulo');
+    mod.innerHTML = `<div class="card">
+      <h3>🥣 Registrar Desperdícios / Sobras / Devoluções</h3>
+      <label>Categoria:</label>
+      <select id="categoria">
+        <option value="">Selecione...</option>
+        <option>Desperdício</option>
+        <option>Sobra</option>
+        <option>Devolução</option>
+      </select>
+      <label>Descrição:</label>
+      <textarea id="descricao" placeholder="Descreva o ocorrido"></textarea>
+      <label>Quantidade / Valor:</label>
+      <input type="text" id="quantidade" placeholder="Ex: 2kg ou R$30,00">
+      <button onclick="registrarLancamento()">Registrar</button>
+      <button onclick="voltar()">⬅ Voltar</button>
+    </div>`;
+  }
+  async function registrarLancamento() {
+    const empresa = localStorage.getItem('empresa');
+    const categoria = document.getElementById('categoria').value;
+    const descricao = document.getElementById('descricao').value;
+    const qtd = document.getElementById('quantidade').value;
+    if (!categoria || !descricao || !qtd) {
+      alert("Preencha todos os campos!");
+      return;
+    }
+    showOverlay();
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'registrarLancamento', empresa, categoria, descricao, qtd })
+    });
+    const data = await res.json();
+    hideOverlay();
+    alert(data.msg);
+    voltar();
+  }
+
+  /* RELATÓRIOS */
+  async function renderRelatorios(empresa) {
+    showOverlay();
+    const [resC, resM] = await Promise.all([
+      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`),
+      fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`)
+    ]);
+    const check = await resC.json();
+    const manut = await resM.json();
+    hideOverlay();
+
+    const mod = document.getElementById('modulo');
+    let html = `<div id="relatorios"><h2>📅 Histórico do Dia</h2>`;
+    html += `<div class="relatorio-card"><h3>✅ Check-list</h3>`;
+    const conclu = check.filter(c => c.status === 'Concluído');
+    if (conclu.length) {
+      conclu.forEach(c => html += `<p>✔ ${c.tarefa}</p>`);
+    } else {
+      html += `<p>Nenhuma tarefa concluída.</p>`;
+    }
+    html += `</div>`;
+
+    html += `<div class="relatorio-card"><h3>🧰 Manutenções</h3>`;
+    const fezMan = manut.filter(m => m.status === 'Feita');
+    if (fezMan.length) {
+      fezMan.forEach(m => html += `<p>🔧 ${m.tarefa}</p>`);
+    } else {
+      html += `<p>Nenhuma manutenção finalizada.</p>`;
+    }
+    html += `</div>`;
+
+    html += `<button onclick="voltar()">⬅ Voltar</button></div>`;
+    mod.innerHTML = html;
+  }
+
+  /* LINKS */
+  function renderLinks() {
+    const mod = document.getElementById('modulo');
+    mod.innerHTML = `<div class="card">
+      <h3>🌐 Acessos Rápidos</h3>
+      <a class="link-btn" href="https://mercattodelicia.com.br" target="_blank">🌎 Mercatto Delícia</a>
+      <a class="link-btn" href="https://deliciagourmet.com.br" target="_blank">🍰 Delícia Gourmet</a>
+      <a class="link-btn" href="https://forms.gle/" target="_blank">📝 Formulário</a>
+      <a class="link-btn" href="https://app.powerbi.com/" target="_blank">📊 Power BI</a>
+      <button onclick="voltar()">⬅ Voltar</button>
+    </div>`;
+  }
 </script>
 </body>
 </html>
