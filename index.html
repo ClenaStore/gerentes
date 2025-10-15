@@ -16,6 +16,7 @@
   --text:#fff;
   --muted:#9aa6b2;
   --success:#16a34a;
+  --error:#ef4444;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);height:100%;}
@@ -29,8 +30,7 @@ header{
   position:sticky;top:0;z-index:10;
 }
 .container{padding:15px;max-width:600px;margin:auto;}
-h2{color:var(--accent);margin:10px 0;}
-h3{margin-top:0;}
+h2,h3{color:var(--accent);margin:8px 0;}
 label{display:block;margin:8px 0 4px;}
 input,select,textarea,button{
   width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;
@@ -38,23 +38,34 @@ input,select,textarea,button{
 }
 button{cursor:pointer;background:var(--accent);color:#000;font-weight:600;transition:0.2s;}
 button:hover{opacity:0.9;}
-.task-item{display:flex;align-items:center;justify-content:space-between;background:#334155;
-  padding:8px 10px;border-radius:6px;margin-bottom:6px;}
-.task-item span{flex:1;}
-.done{color:var(--success);text-decoration:line-through;}
-.hidden{display:none;}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:15px;
+}
 .card{
   background:var(--card);
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:20px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.2);
-  animation:fadeIn 0.4s ease;
+  padding:20px;
+  border-radius:12px;
+  text-align:center;
+  box-shadow:0 4px 15px rgba(0,0,0,0.3);
+  transition:transform 0.2s ease;
 }
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(10px);}
-  to{opacity:1;transform:translateY(0);}
+.card:hover{transform:scale(1.03);}
+.card button{
+  width:100%;margin-top:10px;background:var(--accent);
 }
+.hidden{display:none;}
+.task-item{
+  background:#334155;
+  margin-bottom:6px;
+  padding:8px 10px;
+  border-radius:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.done{color:var(--success);text-decoration:line-through;}
 a.link-btn{
   display:block;
   text-decoration:none;
@@ -66,14 +77,21 @@ a.link-btn{
   font-weight:600;
   margin-bottom:8px;
 }
-a.link-btn:hover{opacity:0.9;}
 footer{color:var(--muted);text-align:center;padding:10px 0;font-size:12px;}
+#relatorios{background:var(--bg);padding:20px;}
+.relatorio-card{
+  background:var(--card);
+  border-radius:10px;
+  margin-bottom:15px;
+  padding:15px;
+}
 </style>
 </head>
 <body>
 
 <header>🧭 Painel de Gerência</header>
 
+<!-- LOGIN -->
 <div id="login" class="container">
   <div class="card">
     <h2>Identificação</h2>
@@ -84,58 +102,46 @@ footer{color:var(--muted);text-align:center;padding:10px 0;font-size:12px;}
     <label>Senha:</label>
     <input type="password" id="senha" placeholder="Digite sua senha">
     <button onclick="login()">Entrar</button>
-    <p id="loginMsg" style="color:#ff5555;font-size:14px;"></p>
+    <p id="loginMsg" style="color:var(--error);font-size:14px;"></p>
   </div>
 </div>
 
+<!-- DASHBOARD -->
 <div id="painel" class="container hidden">
-  <div class="card">
-    <h2 id="empresaNome"></h2>
-  </div>
+  <h2 id="empresaNome"></h2>
 
-  <div class="card">
-    <h3>✅ Check-list Diário</h3>
-    <div id="checklist"></div>
-  </div>
-
-  <div class="card">
-    <h3>🥣 Registro de Desperdícios / Sobras / Devoluções</h3>
-    <label>Categoria:</label>
-    <select id="categoria">
-      <option value="">Selecione...</option>
-      <option>Desperdício</option>
-      <option>Sobra</option>
-      <option>Devolução</option>
-    </select>
-    <label>Descrição:</label>
-    <textarea id="descricao" placeholder="Descreva o ocorrido"></textarea>
-    <label>Quantidade / Valor:</label>
-    <input type="text" id="quantidade" placeholder="Ex: 2kg ou R$30,00">
-    <button onclick="registrarLancamento()">Registrar</button>
-  </div>
-
-  <div class="card">
-    <h3>🧰 Manutenções Recorrentes</h3>
-    <div id="manutencoes"></div>
-  </div>
-
-  <div class="card">
-    <h3>🌐 Acessos Rápidos</h3>
-    <a class="link-btn" href="https://mercattodelicia.com.br" target="_blank">🌎 Site Mercatto Delícia</a>
-    <a class="link-btn" href="https://deliciagourmet.com.br" target="_blank">🍰 Site Delícia Gourmet</a>
-    <a class="link-btn" href="https://forms.gle/" target="_blank">📝 Formulário de Feedback</a>
-    <a class="link-btn" href="https://app.powerbi.com/" target="_blank">📊 Painel Power BI</a>
+  <div class="grid">
+    <div class="card" onclick="abrirModulo('checklist')">
+      <h3>✅ Check-list</h3>
+      <p>Verificar tarefas do dia</p>
+    </div>
+    <div class="card" onclick="abrirModulo('manutencoes')">
+      <h3>🧰 Manutenções</h3>
+      <p>Verificar e marcar concluídas</p>
+    </div>
+    <div class="card" onclick="abrirModulo('desperdicios')">
+      <h3>🥣 Desperdícios</h3>
+      <p>Registrar sobras e devoluções</p>
+    </div>
+    <div class="card" onclick="abrirModulo('relatorios')">
+      <h3>📅 Histórico do Dia</h3>
+      <p>Relatórios e registros</p>
+    </div>
+    <div class="card" onclick="abrirModulo('links')">
+      <h3>🌐 Acessos Rápidos</h3>
+      <p>Sites e Painéis</p>
+    </div>
   </div>
 
   <footer>©2025 Grupo Delícia & Mercatto</footer>
 </div>
 
-<script>
-/* 🔐 Configurações */
-const LOGIN_URL = 'https://gerentes.clena.com.br/api/login'; // URL da sua API Vercel
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5XosN21wYpRLWIV-B4Wo70oZX6ozXhP4y5jWj946w4pyID4cZjLZxzV9Rg6bdtq_w/exec';
+<!-- MÓDULOS -->
+<div id="modulo" class="container hidden"></div>
 
-/* 👥 Lista de usuários fixos */
+<script>
+const LOGIN_URL = 'https://gerentes.clena.com.br/api/login';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5XosN21wYpRLWIV-B4Wo70oZX6ozXhP4y5jWj946w4pyID4cZjLZxzV9Rg6bdtq_w/exec';
 const usuarios = [
   { id: "MERCATTO_DHEURE", nome: "Dheure (Mercatto)" },
   { id: "MERCATTO_YURI", nome: "Yuri (Mercatto)" },
@@ -146,7 +152,6 @@ const usuarios = [
   { id: "DELICIA_VALCIR", nome: "Valcir (Delícia)" },
 ];
 
-/* 🧭 Preenche o select de usuários */
 window.onload = () => {
   const sel = document.getElementById('usuarioSelect');
   usuarios.forEach(u => {
@@ -157,111 +162,128 @@ window.onload = () => {
   });
 };
 
-/* 🔑 Login */
 async function login() {
   const usuario = document.getElementById('usuarioSelect').value;
   const senha = document.getElementById('senha').value.trim();
   const msg = document.getElementById('loginMsg');
-
-  if (!usuario || !senha) {
-    msg.textContent = "Preencha todos os campos.";
-    return;
-  }
+  if (!usuario || !senha) return msg.textContent = "Preencha todos os campos.";
+  msg.textContent = "Validando...";
 
   try {
-    msg.textContent = "Validando...";
     const res = await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
     const data = await res.json();
-
-    if (!data.success) {
-      msg.textContent = data.msg || "Usuário ou senha incorretos.";
-      return;
-    }
+    if (!data.success) return msg.textContent = data.msg || "Usuário ou senha incorretos.";
 
     document.getElementById('login').classList.add('hidden');
     document.getElementById('painel').classList.remove('hidden');
     document.getElementById('empresaNome').textContent = data.empresa;
     localStorage.setItem('empresa', data.empresa);
-    carregarChecklist(data.empresa);
-    carregarManutencoes(data.empresa);
-  } catch (error) {
-    msg.textContent = "Erro ao conectar com o servidor.";
+  } catch {
+    msg.textContent = "Erro de conexão.";
   }
 }
 
-/* ✅ Checklist */
-async function carregarChecklist(empresa) {
+/* ABRIR MÓDULOS */
+function abrirModulo(tipo) {
+  document.getElementById('painel').classList.add('hidden');
+  const mod = document.getElementById('modulo');
+  mod.classList.remove('hidden');
+  const empresa = localStorage.getItem('empresa');
+
+  if (tipo === 'checklist') renderChecklist(empresa);
+  if (tipo === 'manutencoes') renderManutencoes(empresa);
+  if (tipo === 'desperdicios') renderDesperdicios(empresa);
+  if (tipo === 'relatorios') renderRelatorios(empresa);
+  if (tipo === 'links') renderLinks();
+}
+
+/* VOLTAR */
+function voltar() {
+  document.getElementById('modulo').classList.add('hidden');
+  document.getElementById('painel').classList.remove('hidden');
+}
+
+/* ✅ CHECKLIST */
+async function renderChecklist(empresa) {
   const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);
   const data = await res.json();
-  const div = document.getElementById('checklist');
-  div.innerHTML = '';
-  if (!data.length) {
-    div.innerHTML = '<p>Nenhuma tarefa cadastrada.</p>';
-    return;
-  }
-  data.forEach(t => {
-    const el = document.createElement('div');
-    el.className = 'task-item';
-    el.innerHTML = `
-      <span class="${t.status === 'Concluído' ? 'done':''}">${t.tarefa}</span>
-      <button onclick="atualizarStatus('${empresa}',${t.linha})">${t.status === 'Concluído' ? '✔':'Marcar'}</button>
-    `;
-    div.appendChild(el);
-  });
+  const mod = document.getElementById('modulo');
+  mod.innerHTML = `<div class='card'><h3>✅ Check-list Diário</h3>
+  ${data.length?data.map(t=>`
+  <div class='task-item'><span class="${t.status==='Concluído'?'done':''}">${t.tarefa}</span>
+  <button onclick="atualizarStatus('${empresa}',${t.linha})">${t.status==='Concluído'?'✔':'Marcar'}</button></div>`).join(''):'<p>Nenhuma tarefa cadastrada.</p>'}
+  <button onclick="voltar()">⬅ Voltar</button></div>`;
 }
-
-/* 🔄 Atualizar status */
-async function atualizarStatus(empresa, linha) {
+async function atualizarStatus(empresa,linha){
   await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
-  carregarChecklist(empresa);
+  renderChecklist(empresa);
 }
 
-/* 🥣 Registrar desperdício/sobra/devolução */
-async function registrarLancamento() {
-  const empresa = localStorage.getItem('empresa');
-  const categoria = document.getElementById('categoria').value;
-  const descricao = document.getElementById('descricao').value;
-  const qtd = document.getElementById('quantidade').value;
-  if (!categoria || !descricao || !qtd) {
-    alert("Preencha todos os campos!");
-    return;
-  }
-  const res = await fetch(GAS_URL, {
-    method:'POST',
-    body: JSON.stringify({action:'registrarLancamento',empresa,categoria,descricao,qtd})
-  });
-  const data = await res.json();
-  alert(data.msg);
-  document.getElementById('categoria').value='';
-  document.getElementById('descricao').value='';
-  document.getElementById('quantidade').value='';
-}
-
-/* 🧰 Manutenções */
-async function carregarManutencoes(empresa) {
+/* 🧰 MANUTENÇÕES */
+async function renderManutencoes(empresa){
   const res = await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`);
   const data = await res.json();
-  const div = document.getElementById('manutencoes');
-  div.innerHTML = '';
-  if (!data.length) {
-    div.innerHTML = '<p>Nenhuma manutenção cadastrada.</p>';
-    return;
-  }
-  data.forEach(m => {
-    const el = document.createElement('div');
-    el.className = 'task-item';
-    el.innerHTML = `
-      <span class="${m.status === 'Feita' ? 'done':''}">${m.tarefa}</span>
-      <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status === 'Feita' ? '✔':'Feita'}</button>
-    `;
-    div.appendChild(el);
-  });
+  const mod=document.getElementById('modulo');
+  mod.innerHTML=`<div class='card'><h3>🧰 Manutenções</h3>
+  ${data.length?data.map(m=>`
+  <div class='task-item'><span class="${m.status==='Feita'?'done':''}">${m.tarefa}</span>
+  <button onclick="atualizarManutencao('${empresa}',${m.linha})">${m.status==='Feita'?'✔':'Feita'}</button></div>`).join(''):'<p>Nenhuma manutenção cadastrada.</p>'}
+  <button onclick="voltar()">⬅ Voltar</button></div>`;
+}
+async function atualizarManutencao(empresa,linha){
+  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
+  renderManutencoes(empresa);
 }
 
-/* 🛠 Atualizar manutenção */
-async function atualizarManutencao(empresa, linha) {
-  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
-  carregarManutencoes(empresa);
+/* 🥣 DESPERDICIOS */
+function renderDesperdicios(empresa){
+  const mod=document.getElementById('modulo');
+  mod.innerHTML=`<div class='card'><h3>🥣 Registrar Desperdícios</h3>
+  <label>Categoria:</label>
+  <select id='categoria'>
+    <option value=''>Selecione...</option>
+    <option>Desperdício</option>
+    <option>Sobra</option>
+    <option>Devolução</option>
+  </select>
+  <label>Descrição:</label><textarea id='descricao' placeholder='Descreva o ocorrido'></textarea>
+  <label>Quantidade / Valor:</label><input type='text' id='quantidade' placeholder='Ex: 2kg ou R$30,00'>
+  <button onclick="registrarLancamento()">Registrar</button>
+  <button onclick="voltar()">⬅ Voltar</button></div>`;
+}
+async function registrarLancamento(){
+  const empresa=localStorage.getItem('empresa');
+  const categoria=document.getElementById('categoria').value;
+  const descricao=document.getElementById('descricao').value;
+  const qtd=document.getElementById('quantidade').value;
+  if(!categoria||!descricao||!qtd)return alert("Preencha todos os campos!");
+  const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria,descricao,qtd})});
+  const data=await res.json();alert(data.msg);voltar();
+}
+
+/* 📅 RELATÓRIOS */
+async function renderRelatorios(empresa){
+  const resC=await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);
+  const resM=await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`);
+  const res=resC.json();const man=resM.json();
+  const [check,manut]=await Promise.all([res,man]);
+  const mod=document.getElementById('modulo');
+  mod.innerHTML=`<div id='relatorios'>
+  <h2>📅 Histórico do Dia</h2>
+  <div class='relatorio-card'><h3>✅ Check-list</h3>${check.filter(c=>c.status==='Concluído').length?check.filter(c=>c.status==='Concluído').map(c=>`<p>✔ ${c.tarefa}</p>`).join(''):'<p>Nenhuma tarefa concluída.</p>'}</div>
+  <div class='relatorio-card'><h3>🧰 Manutenções</h3>${manut.filter(m=>m.status==='Feita').length?manut.filter(m=>m.status==='Feita').map(m=>`<p>🔧 ${m.tarefa}</p>`).join(''):'<p>Nenhuma manutenção finalizada.</p>'}</div>
+  <p style='text-align:center;'><button onclick="voltar()">⬅ Voltar</button></p></div>`;
+}
+
+/* 🌐 LINKS */
+function renderLinks(){
+  const mod=document.getElementById('modulo');
+  mod.innerHTML=`<div class='card'><h3>🌐 Acessos Rápidos</h3>
+  <a class='link-btn' href='https://mercattodelicia.com.br' target='_blank'>🌎 Mercatto Delícia</a>
+  <a class='link-btn' href='https://deliciagourmet.com.br' target='_blank'>🍰 Delícia Gourmet</a>
+  <a class='link-btn' href='https://forms.gle/' target='_blank'>📝 Formulário</a>
+  <a class='link-btn' href='https://app.powerbi.com/' target='_blank'>📊 Power BI</a>
+  <button onclick='voltar()'>⬅ Voltar</button></div>`;
 }
 </script>
 </body>
