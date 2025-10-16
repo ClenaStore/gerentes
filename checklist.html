@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>✅ Check-list Diário</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
+  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
+  --chip:#1e293b;--shadow:0 6px 18px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
+  box-shadow:0 3px 10px rgba(0,0,0,.4);
+}
+.container{max-width:700px;margin:auto;padding:16px;}
+.section{
+  background:var(--card);border-radius:16px;padding:18px;
+  box-shadow:var(--shadow);margin-bottom:18px;
+}
+.item{
+  background:#1e293b;border-radius:10px;padding:12px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin:8px 0;transition:background .2s;
+}
+.item:hover{background:#26334e;}
+.done{text-decoration:line-through;color:var(--success);}
+.btn{
+  padding:8px 16px;border:0;border-radius:8px;font-weight:600;
+  background:var(--accent);color:#000;cursor:pointer;
+  box-shadow:var(--shadow);transition:.2s;font-size:14px;
+}
+.btn.small{padding:6px 10px;font-size:13px;width:90px;}
+.btn:hover{background:var(--accent2);transform:scale(1.03);}
+.btn.loading{opacity:.6;pointer-events:none;}
+.btn.loading::after{
+  content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;
+  border:3px solid rgba(0,0,0,.3);border-top:3px solid #000;border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tag{background:var(--chip);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px;}
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#000;padding:10px 20px;border-radius:999px;
+  font-weight:600;box-shadow:var(--shadow);display:none;
+}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
+</style>
+</head>
+<body>
+
+<header>✅ Check-list Diário</header>
+<div class="container">
+  <div class="section" id="listaChecklist">
+    <p class="tag">Carregando tarefas...</p>
+  </div>
+
+  <div style="text-align:center;margin-top:20px">
+    <button class="btn" onclick="concluirChecklist()">✅ Concluir Check-list</button>
+  </div>
+
+  <div style="text-align:center;margin-top:20px">
+    <button class="btn" style="background:#334155;color:#fff" onclick="voltar()">⬅ Voltar</button>
+  </div>
+
+  <footer>©2025 Grupo Delícia & Mercatto</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzO-GznI0QpgKPvwkpt4e3SSslad5i3QagsgKbQr1v5i5DTtHa0CPzUfsV3RhFGD0Vf/exec';
+const $ = s => document.querySelector(s);
+
+let empresaAtual = localStorage.getItem('empresa') || 'MERCATTO DELÍCIA';
+let gerenteAtual = localStorage.getItem('gerente') || 'Gerente';
+let checklist = [];
+
+/* ===== CARREGAR LISTA ===== */
+async function carregarChecklist(){
+  try{
+    const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`);
+    const data = await res.json();
+    checklist = data || [];
+    renderChecklist();
+  }catch{
+    $('#listaChecklist').innerHTML = '<p class="tag">Erro ao carregar tarefas.</p>';
+  }
+}
+
+/* ===== RENDERIZAR ===== */
+function renderChecklist(){
+  const box = $('#listaChecklist');
+  if(!checklist.length){box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>';return;}
+  box.innerHTML = checklist.map(t=>{
+    const done = t.status==='Concluído';
+    return `
+      <div class="item">
+        <div class="txt ${done?'done':''}">${t.tarefa}</div>
+        <button class="btn small" style="${done?'background:var(--success);color:#fff':''}" 
+          ${done?'disabled':''} onclick="marcarFeito(this,'${t.tarefa}')">
+          ${done?'✔ Feito':'Fazer'}
+        </button>
+      </div>`;
+  }).join('');
+}
+
+/* ===== MARCAR COMO FEITO ===== */
+async function marcarFeito(btn,tarefa){
+  btn.classList.add('loading');
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',
+      body:JSON.stringify({
+        action:'registrarHistorico',
+        empresa:empresaAtual,
+        gerente:gerenteAtual,
+        tarefa:tarefa,
+        status:'Feito'
+      })
+    });
+    btn.classList.remove('loading');
+    btn.textContent='✔ Feito';
+    btn.style.background='var(--success)';
+    btn.style.color='#fff';
+    btn.disabled=true;
+    btn.parentElement.querySelector('.txt').classList.add('done');
+    toast('✅ '+tarefa+' marcada como feita');
+  }catch{
+    toast('⚠️ Erro ao registrar tarefa!');
+    btn.classList.remove('loading');
+  }
+}
+
+/* ===== CONCLUIR CHECKLIST ===== */
+async function concluirChecklist(){
+  const btn = event.target;
+  btn.classList.add('loading');
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',
+      body:JSON.stringify({
+        action:'finalizarChecklist',
+        empresa:empresaAtual,
+        gerente:gerenteAtual
+      })
+    });
+    btn.classList.remove('loading');
+    toast('🎯 Checklist finalizado e reiniciado!');
+    carregarChecklist();
+  }catch{
+    toast('⚠️ Erro ao concluir checklist!');
+    btn.classList.remove('loading');
+  }
+}
+
+/* ===== VOLTAR ===== */
+function voltar(){window.location.href='index.html';}
+
+/* ===== TOAST ===== */
+function toast(msg){
+  const el=$('#toast');
+  el.textContent=msg;
+  el.style.display='block';
+  setTimeout(()=>el.style.display='none',2500);
+}
+
+/* ===== INÍCIO ===== */
+carregarChecklist();
+</script>
+</body>
+</html>
