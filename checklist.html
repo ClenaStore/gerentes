@@ -108,29 +108,46 @@ $('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
 $('#usuarioInfo').textContent=`Gerente: ${gerenteAtual}`;
 
 let checklistCache=[],historicoFiltrado=[];
-let loadedOnce=false;
+let carregando=false;
 
 /* ==== INÍCIO ==== */
-(async()=>{await carregarChecklist(true);setInterval(()=>carregarChecklist(false),60000);})();
-
-function fmt(d){const t=new Date(d);return `${t.toLocaleDateString('pt-BR')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;}
+(async()=>{
+  const cache=sessionStorage.getItem('checklistCache');
+  if(cache){
+    try{
+      const parsed=JSON.parse(cache);
+      checklistCache=parsed.checklist||[];
+      historicoFiltrado=parsed.historico||[];
+      renderChecklist(); // mostra instantâneo
+    }catch{}
+  }
+  carregarChecklist(true);
+  setInterval(()=>carregarChecklist(false),3600000); // a cada 1h
+})();
 
 /* ==== CARREGAR ==== */
-async function carregarChecklist(showOverlay){
-  if(showOverlay && !loadedOnce)$('#overlay').style.display='flex';
+async function carregarChecklist(primeiraVez){
+  if(carregando)return;
+  carregando=true;
+  if(primeiraVez)$('#overlay').style.display='flex';
   try{
-    const [res1,res2]=await Promise.all([
-      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json()),
-      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json())
-    ]);
-    checklistCache=res1||[];
-    const histEmp=(res2||[]).filter(h=>h.empresa===empresaAtual);
+    const checklistPromise=fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json());
+    const historicoPromise=fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json());
+    const [checklist, historico]=await Promise.all([checklistPromise, historicoPromise]);
+
+    checklistCache=checklist||[];
+    const histEmp=(historico||[]).filter(h=>h.empresa===empresaAtual);
     const idx=histEmp.map(h=>h.tarefa).lastIndexOf('--- FIM DO CHECKLIST ---');
     historicoFiltrado=idx>=0?histEmp.slice(idx+1):histEmp;
+
+    sessionStorage.setItem('checklistCache',JSON.stringify({checklist:checklistCache,historico:historicoFiltrado}));
     renderChecklist();
-    loadedOnce=true;
-  }catch{toast('⚠️ Erro ao carregar dados.');}
-  finally{$('#overlay').style.display='none';}
+  }catch(err){
+    toast('⚠️ Erro ao carregar dados.');
+  }finally{
+    $('#overlay').style.display='none';
+    carregando=false;
+  }
 }
 
 /* ==== RENDER ==== */
@@ -138,15 +155,17 @@ function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
   const feitos=new Set(historicoFiltrado.filter(h=>String(h.status).toLowerCase().includes('feito')).map(h=>h.tarefa));
-  box.innerHTML=checklistCache.map(t=>{
+  const html=[];
+  for(const t of checklistCache){
     const done=feitos.has(t.tarefa);
-    return `<div class="item">
+    html.push(`<div class="item">
       <div class="${done?'done':''}">${t.tarefa}</div>
       <button class="btn small ${done?'done':''}" onclick="${done?'mostrarHistorico(\''+t.tarefa+'\')':'marcarFeito(this,\''+t.tarefa+'\')'}">
         ${done?'CONCLUÍDA':'Fazer'}
       </button>
-    </div>`;
-  }).join('');
+    </div>`);
+  }
+  box.innerHTML=html.join('');
 }
 
 /* ==== MARCAR FEITO ==== */
@@ -157,7 +176,9 @@ async function marcarFeito(btn,tarefa){
       action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'
     })});
     toast('✅ '+tarefa+' feita');
-    setTimeout(()=>carregarChecklist(false),500);
+    historicoFiltrado.push({empresa:empresaAtual,tarefa,status:'Feito'});
+    renderChecklist();
+    sessionStorage.setItem('checklistCache',JSON.stringify({checklist:checklistCache,historico:historicoFiltrado}));
   }catch{toast('⚠️ Erro ao registrar tarefa.');}
 }
 
@@ -169,7 +190,7 @@ async function mostrarHistorico(tarefa){
     const registros=await res.json();$('#overlay').style.display='none';
     const hist=(registros||[]).filter(h=>h.tarefa===tarefa&&h.empresa===empresaAtual);
     if(!hist.length)return toast('Sem registros.');
-    const html=hist.map(h=>`<li><strong>${h.gerente}</strong> • ${h.status}<span>${h.empresa} • ${fmt(h.data)}</span></li>`).join('');
+    const html=hist.map(h=>`<li><strong>${h.gerente}</strong> • ${h.status}<br><small>${h.empresa} • ${h.data}</small></li>`).join('');
     const p=document.createElement('div');
     p.className='popup-bg';
     p.innerHTML=`<div class="popup"><h3>📋 Histórico – ${tarefa}</h3><ul>${html}</ul><button onclick="this.closest('.popup-bg').remove()">Fechar</button></div>`;
@@ -216,7 +237,9 @@ async function confirmarConclusao(btn,concluidas,faltam){
     })});
     toast('🎯 Checklist finalizado.');
     btn.closest('.popup-bg').remove();
-    setTimeout(()=>carregarChecklist(true),600);
+    historicoFiltrado=[]; // força reset
+    sessionStorage.removeItem('checklistCache');
+    setTimeout(()=>carregarChecklist(true),400);
   }catch{
     toast('Erro ao finalizar.');
     btn.disabled=false;btn.textContent='Confirmar Conclusão';
