@@ -4,78 +4,57 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>🧭 Painel de Gerência - Delícia & Mercatto</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Symbols+Rounded" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0a0f1f;
-  --card:#151d2f;
-  --accent:#ff8f1f;
-  --accent2:#ffb347;
-  --text:#f8fafc;
-  --muted:#94a3b8;
-  --success:#22c55e;
-  --error:#ef4444;
-  --chip:#1e293b;
-  --shadow:0 6px 16px rgba(0,0,0,0.45);
+  --bg:#0a0f1f;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
+  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
+  --chip:#1e293b;--shadow:0 6px 16px rgba(0,0,0,0.45);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 header{
   position:sticky;top:0;z-index:10;
   background:linear-gradient(90deg,var(--accent),var(--accent2));
-  color:#000;text-align:center;padding:16px;font-weight:700;
-  letter-spacing:.3px;font-size:18px;box-shadow:0 3px 10px rgba(0,0,0,.4)
+  color:#000;text-align:center;padding:14px;font-weight:700;
+  letter-spacing:.2px;font-size:18px;box-shadow:0 3px 10px rgba(0,0,0,.4)
 }
-.container{max-width:680px;margin:0 auto;padding:16px}
+.container{max-width:700px;margin:auto;padding:16px;}
 .view{display:none;animation:fade .4s ease}
 .view.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-h2,h3{color:var(--accent2);margin-top:0}
-.section{
-  background:var(--card);border-radius:16px;padding:18px;
-  box-shadow:var(--shadow);margin-bottom:16px
-}
+.section{background:var(--card);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
 .select,.input,.textarea{
-  width:100%;padding:12px;border-radius:10px;border:0;
-  background:#1e293b;color:#fff;margin:8px 0;font-size:15px
+  width:100%;padding:12px;border-radius:10px;border:0;background:#1e293b;color:#fff;
+  margin:8px 0;font-size:15px;transition:.2s;
 }
 .btn{
-  width:100%;padding:12px;border:0;border-radius:10px;
-  background:var(--accent);color:#000;font-weight:600;
-  box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;
-  transition:all .2s ease;position:relative
+  width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#000;
+  font-weight:600;cursor:pointer;transition:.2s;box-shadow:0 3px 10px rgba(0,0,0,.3);
+  position:relative;
 }
 .btn:hover{background:var(--accent2);transform:scale(1.02)}
 .btn.loading{opacity:.6;pointer-events:none}
 .btn.loading::after{
   content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;
   border:3px solid rgba(0,0,0,.3);border-top:3px solid #000;border-radius:50%;
-  animation:spin 1s linear infinite
+  animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.card{
-  background:var(--card);padding:20px;border-radius:14px;
-  text-align:center;box-shadow:var(--shadow);cursor:pointer;
-  transition:transform .2s ease,background .2s ease;
-}
-.card:hover{transform:translateY(-2px);background:#1c2540}
+.card{background:var(--card);padding:20px;border-radius:14px;text-align:center;box-shadow:var(--shadow);
+  cursor:pointer;transition:all .2s;}
+.card:hover{transform:translateY(-2px);background:#1b2744}
 .cardgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.item{
-  background:#1e293b;border-radius:10px;padding:10px 12px;
-  display:flex;justify-content:space-between;align-items:center;
-  margin:8px 0;transition:background .2s ease
-}
+.item{background:#1e293b;border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin:8px 0;transition:.2s;}
 .item:hover{background:#26334e}
 .done{text-decoration:line-through;color:var(--success)}
 .tag{background:var(--chip);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px}
 .backbar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .backbar button{background:none;border:0;color:var(--accent2);font-weight:600;cursor:pointer}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
-.toast{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:var(--accent);color:#000;padding:10px 20px;border-radius:999px;
-  font-weight:600;box-shadow:var(--shadow);display:none;animation:fade .3s ease
-}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#000;padding:10px 18px;border-radius:999px;font-weight:600;
+  box-shadow:var(--shadow);display:none;animation:fade .3s ease}
 </style>
 </head>
 <body>
@@ -102,14 +81,14 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
   <div class="container">
     <div class="section" style="display:flex;justify-content:space-between;align-items:center">
       <h3 id="empresaNome"></h3>
-      <button class="tag" onclick="logout()">Sair</button>
+      <button class="tag" onclick="showView('login')">Sair</button>
     </div>
     <div class="cardgrid">
       <div class="card" onclick="showView('checklist')"><h3>✅ Check-list</h3><p>Verificar tarefas</p></div>
       <div class="card" onclick="showView('manutencoes')"><h3>🧰 Manutenções</h3><p>Rotinas técnicas</p></div>
       <div class="card" onclick="showView('desperdicios')"><h3>🥣 Desperdícios</h3><p>Registrar sobras</p></div>
       <div class="card" onclick="showView('relatorios')"><h3>📅 Histórico</h3><p>Resumo diário</p></div>
-      <div class="card" onclick="showView('links')"><h3>🌐 Acessos</h3><p>Sites e Painéis</p></div>
+      <div class="card" onclick="showView('links')"><h3>🌐 Acessos</h3><p>Painéis úteis</p></div>
     </div>
     <div style="margin-top:20px;text-align:center">
       <button class="btn" onclick="enviarResumoAgora()">📧 Enviar resumo agora</button>
@@ -139,12 +118,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
   <div class="container">
     <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>🥣 Registrar Desperdícios</h3></div>
     <div class="section">
-      <select id="categoria" class="select">
-        <option value="">Selecione...</option>
-        <option>Desperdício</option>
-        <option>Sobra</option>
-        <option>Devolução</option>
-      </select>
+      <select id="categoria" class="select"><option value="">Selecione...</option><option>Desperdício</option><option>Sobra</option><option>Devolução</option></select>
       <textarea id="descricao" class="textarea" placeholder="Descreva o ocorrido"></textarea>
       <input id="quantidade" class="input" placeholder="Ex: 2kg ou R$30,00">
       <button class="btn" onclick="registrarLancamento()">Registrar</button>
@@ -152,12 +126,13 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
   </div>
 </section>
 
-<!-- RELATORIOS -->
+<!-- RELATÓRIOS -->
 <section id="view-relatorios" class="view">
   <div class="container">
     <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>📅 Histórico do Dia</h3></div>
     <div class="section">
-      <h4>Checklist</h4><div id="relChecklistData"></div><hr><h4>Manutenções</h4><div id="relManutData"></div>
+      <h4>Checklist</h4><div id="relChecklistData"></div><hr>
+      <h4>Manutenções</h4><div id="relManutData"></div>
     </div>
   </div>
 </section>
@@ -180,9 +155,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
 const LOGIN_URL='https://gerentes.clena.com.br/api/login';
 const GAS_URL='https://script.google.com/macros/s/AKfycbzO-GznI0QpgKPvwkpt4e3SSslad5i3QagsgKbQr1v5i5DTtHa0CPzUfsV3RhFGD0Vf/exec';
 const $=s=>document.querySelector(s);
-const cache={checklist:null,manutencoes:null};
-const views=['login','home','checklist','manutencoes','desperdicios','relatorios','links'];
+const cache={checklist:[],manutencoes:[]};
+let empresaAtual="";
 
+const views=['login','home','checklist','manutencoes','desperdicios','relatorios','links'];
 function showView(v){
   views.forEach(x=>$('#view-'+x)?.classList.remove('active'));
   $('#view-'+v)?.classList.add('active');
@@ -191,12 +167,11 @@ function showView(v){
   if(v==='relatorios')renderRelatorios();
 }
 
+/* LOGIN */
 window.onload=()=>{
   const sel=$('#usuarioSelect');
-  ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','MERCATTO_JAQUELINE','DELICIA_RUAN','DELICIA_VALCIR']
-  .forEach(id=>{const opt=document.createElement('option');opt.value=id;opt.textContent=id.replace('_',' ');sel.appendChild(opt);});
-  const u=localStorage.getItem('gerente_id'),s=localStorage.getItem('gerente_senha');
-  if(u&&s){sel.value=u;$('#senha').value=s;login();}
+  ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','DELICIA_RUAN','DELICIA_VALCIR']
+  .forEach(id=>{const o=document.createElement('option');o.value=id;o.textContent=id.replace('_',' ');sel.appendChild(o);});
 };
 
 async function login(){
@@ -204,27 +179,31 @@ async function login(){
   if(!usuario||!senha){msg.textContent='Preencha todos os campos.';return;}
   msg.textContent='';
   try{
-    const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);const data=await res.json();
+    const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
+    const data=await res.json();
     if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';return;}
-    localStorage.setItem('gerente_id',usuario);
-    localStorage.setItem('gerente_senha',senha);
-    localStorage.setItem('empresa',data.empresa);
+    empresaAtual=data.empresa;
     $('#empresaNome').textContent=data.empresa;
-    preloadData();showView('home');
+    await carregarDados();
+    showView('home');
   }catch{msg.textContent='Erro de conexão.';}
 }
-function logout(){localStorage.clear();showView('login');}
 
-async function preloadData(){
-  const emp=localStorage.getItem('empresa');
-  cache.checklist=await fetch(`${GAS_URL}?action=checklist&empresa=${emp}`).then(r=>r.json());
-  cache.manutencoes=await fetch(`${GAS_URL}?action=manutencoes&empresa=${emp}`).then(r=>r.json());
+/* SINCRONIZAÇÃO */
+async function carregarDados(){
+  if(!empresaAtual)return;
+  const [c,m]=await Promise.all([
+    fetch(`${GAS_URL}?action=checklist&empresa=${empresaAtual}`).then(r=>r.json()),
+    fetch(`${GAS_URL}?action=manutencoes&empresa=${empresaAtual}`).then(r=>r.json())
+  ]);
+  cache.checklist=c||[]; cache.manutencoes=m||[];
+  setTimeout(carregarDados,60000);
 }
 
 /* CHECKLIST */
 function renderChecklist(){
   const box=$('#listChecklist');box.innerHTML='';
-  const data=cache.checklist||[];
+  const data=cache.checklist;
   if(!data.length){box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>';return;}
   data.forEach(t=>{
     const done=t.status==='Concluído';
@@ -232,15 +211,15 @@ function renderChecklist(){
       <div class="item">
         <div class="txt ${done?'done':''}">${t.tarefa}</div>
         <button class="btn" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
-          onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${done?'✔ Feito':'Marcar'}</button>
+          onclick="marcarChecklist(this,'${empresaAtual}','${t.tarefa}',${t.linha})">${done?'✔ Feito':'Marcar'}</button>
       </div>`;
   });
 }
-async function marcarChecklist(btn,emp,linha){
+
+async function marcarChecklist(btn,emp,tarefa,linha){
   btn.classList.add('loading');
   try{
-    const res=await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${emp}&linha=${linha}`);
-    await res.json();
+    await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(emp)}&tarefa=${encodeURIComponent(tarefa)}&linha=${linha}`);
     btn.classList.remove('loading');
     btn.style.background='var(--success)';
     btn.textContent='✔ Feito';
@@ -256,7 +235,7 @@ async function marcarChecklist(btn,emp,linha){
 /* MANUTENÇÕES */
 function renderManutencoes(){
   const box=$('#listManutencoes');box.innerHTML='';
-  const data=cache.manutencoes||[];
+  const data=cache.manutencoes;
   if(!data.length){box.innerHTML='<p class="tag">Nenhuma manutenção cadastrada.</p>';return;}
   data.forEach(m=>{
     const done=m.status==='Feita';
@@ -264,15 +243,15 @@ function renderManutencoes(){
       <div class="item">
         <div class="txt ${done?'done':''}">${m.tarefa}</div>
         <button class="btn" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
-          onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${done?'✔ Feita':'Concluir'}</button>
+          onclick="marcarManutencao(this,'${empresaAtual}','${m.tarefa}',${m.linha})">${done?'✔ Feita':'Concluir'}</button>
       </div>`;
   });
 }
-async function marcarManutencao(btn,emp,linha){
+
+async function marcarManutencao(btn,emp,tarefa,linha){
   btn.classList.add('loading');
   try{
-    const res=await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${emp}&linha=${linha}`);
-    await res.json();
+    await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(emp)}&tarefa=${encodeURIComponent(tarefa)}&linha=${linha}`);
     btn.classList.remove('loading');
     btn.style.background='var(--success)';
     btn.textContent='✔ Feita';
@@ -285,12 +264,12 @@ async function marcarManutencao(btn,emp,linha){
   }
 }
 
-/* DESPERDÍCIOS */
+/* DESPERDICIOS */
 async function registrarLancamento(){
-  const empresa=localStorage.getItem('empresa'),cat=$('#categoria').value,desc=$('#descricao').value.trim(),qtd=$('#quantidade').value.trim();
+  const cat=$('#categoria').value,desc=$('#descricao').value.trim(),qtd=$('#quantidade').value.trim();
   if(!cat||!desc||!qtd)return toast('⚠️ Preencha todos os campos!');
   const btn=$('#view-desperdicios .btn');btn.classList.add('loading');
-  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria:cat,descricao:desc,qtd})});
+  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa:empresaAtual,categoria:cat,descricao:desc,qtd})});
   btn.classList.remove('loading');
   $('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
   toast('🥣 Registro salvo!');
@@ -298,17 +277,16 @@ async function registrarLancamento(){
 
 /* RELATÓRIOS */
 function renderRelatorios(){
-  const c=(cache.checklist||[]).filter(x=>x.status==='Concluído');
-  const m=(cache.manutencoes||[]).filter(x=>x.status==='Feita');
-  $('#relChecklistData').innerHTML=c.length?c.map(x=>`<div class='item'><div>✔ ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma tarefa concluída.</p>';
-  $('#relManutData').innerHTML=m.length?m.map(x=>`<div class='item'><div>🔧 ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma manutenção finalizada.</p>';
+  const c=cache.checklist.filter(x=>x.status==='Concluído');
+  const m=cache.manutencoes.filter(x=>x.status==='Feita');
+  $('#relChecklistData').innerHTML=c.length?c.map(x=>`<div class='item'><div>✔ ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nada concluído.</p>';
+  $('#relManutData').innerHTML=m.length?m.map(x=>`<div class='item'><div>🔧 ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nada finalizado.</p>';
 }
 
 /* ENVIAR RESUMO */
 async function enviarResumoAgora(){
-  const empresa=localStorage.getItem('empresa');
   const btn=$('#view-home .btn');btn.classList.add('loading');
-  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'enviarResumoAgora',empresa})});
+  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'enviarResumoAgora',empresa:empresaAtual})});
   btn.classList.remove('loading');
   toast('📧 Resumo enviado!');
 }
