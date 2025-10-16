@@ -9,17 +9,17 @@
 :root{
   --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
   --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
-  --shadow:0 6px 18px rgba(0,0,0,.45);
+  --shadow:0 4px 10px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);
-  min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;
+  min-height:100vh;display:flex;flex-direction:column;
 }
 header{
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
-  box-shadow:0 3px 10px rgba(0,0,0,.4);
+  box-shadow:0 3px 8px rgba(0,0,0,.4);
 }
 .container{max-width:700px;margin:auto;padding:16px;width:100%;flex:1;}
 .section{
@@ -27,28 +27,27 @@ header{
   box-shadow:var(--shadow);margin-bottom:18px;
 }
 .item{
-  background:#1e293b;border-radius:10px;padding:12px 14px;
+  background:#1e293b;border-radius:10px;padding:10px 14px;
   display:flex;align-items:center;justify-content:space-between;
-  margin:8px 0;transition:background .2s;
+  margin:6px 0;transition:background .15s;
 }
-.item:hover{background:#24314d;}
+.item:hover{background:#25334e;}
 .done{color:var(--success);}
 .btn{
-  padding:8px 16px;border:0;border-radius:8px;font-weight:600;
+  border:0;border-radius:8px;font-weight:600;
   background:var(--accent);color:#000;cursor:pointer;
-  box-shadow:var(--shadow);transition:.2s;font-size:14px;position:relative;
+  transition:.2s;font-size:13px;padding:6px 12px;min-width:80px;
 }
-.btn.small{padding:6px 10px;font-size:13px;width:90px;}
-.btn:hover{background:var(--accent2);transform:scale(1.03);}
-.btn.loading{opacity:.6;pointer-events:none;}
+.btn:hover{background:var(--accent2);}
+.btn.small{font-size:13px;}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:var(--accent);color:#000;padding:10px 20px;border-radius:999px;
-  font-weight:600;box-shadow:var(--shadow);display:none;
+  background:var(--accent);color:#000;padding:10px 18px;border-radius:999px;
+  font-weight:600;box-shadow:var(--shadow);display:none;z-index:9999;
 }
 footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 .overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  position:fixed;inset:0;background:#000d;
   color:#fff;display:flex;align-items:center;justify-content:center;
   font-weight:600;font-size:18px;z-index:9999;
 }
@@ -85,109 +84,97 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 const GAS_URL='https://script.google.com/macros/s/AKfycbw7L7EltP8gOCvTNhqOhmecicOohbZmznHYZXSzCFplW3GU096isvFu_nsfNl-fawoA/exec';
 const $=s=>document.querySelector(s);
 
-/* ==== LOGIN DATA ==== */
 let empresaAtual = localStorage.getItem('empresa') || 'MERCATTO DELÍCIA';
 let gerenteAtual = localStorage.getItem('gerente') || 'Gerente';
 $('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
 $('#usuarioInfo').textContent=`Gerente: ${gerenteAtual}`;
 
-let checklistCache = JSON.parse(localStorage.getItem('checklistCache') || '[]');
-let historicoCache = JSON.parse(localStorage.getItem('historicoCache') || '[]');
-let ultimoUpdate = localStorage.getItem('lastUpdate') || 0;
+let checklistCache = [];
+let historicoCache = [];
+let ultimoUpdate = 0;
 
-/* ==== LOAD CHECKLIST ==== */
-async function carregarChecklist(force=false){
-  const agora = Date.now();
-  const umaHora = 60*60*1000;
-  const precisaAtualizar = force || (agora - ultimoUpdate > umaHora) || !checklistCache.length;
+/* ==== CARREGAMENTO EFICIENTE ==== */
+(async()=>{
+  try{
+    checklistCache = JSON.parse(localStorage.getItem('checklistCache')||'[]');
+    historicoCache = JSON.parse(localStorage.getItem('historicoCache')||'[]');
+    ultimoUpdate = parseInt(localStorage.getItem('lastUpdate')||0);
 
-  if(precisaAtualizar){
-    $('#overlay').style.display='flex';
-    try{
-      const [resCheck,resHist] = await Promise.all([
-        fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`),
-        fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`)
-      ]);
-      checklistCache = await resCheck.json();
-      historicoCache = await resHist.json();
-      localStorage.setItem('checklistCache', JSON.stringify(checklistCache));
-      localStorage.setItem('historicoCache', JSON.stringify(historicoCache));
-      localStorage.setItem('lastUpdate', Date.now());
-    }catch(e){
-      toast('⚠️ Erro ao atualizar dados.');
-    }finally{
-      $('#overlay').style.display='none';
-    }
-  }
-  renderChecklist();
+    renderChecklist(); // exibe rápido
+
+    const precisaAtualizar = (Date.now()-ultimoUpdate) > 3600000 || !checklistCache.length;
+    if(precisaAtualizar) await atualizarEmSegundoPlano();
+  }catch{toast('⚠️ Erro ao carregar cache.');}
+  $('#overlay').style.display='none';
+})();
+
+/* ==== ATUALIZAÇÃO EM SEGUNDO PLANO ==== */
+async function atualizarEmSegundoPlano(){
+  try{
+    const [res1,res2] = await Promise.all([
+      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json()),
+      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json())
+    ]);
+    checklistCache=res1||[]; historicoCache=res2||[];
+    localStorage.setItem('checklistCache',JSON.stringify(checklistCache));
+    localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
+    localStorage.setItem('lastUpdate',Date.now());
+    renderChecklist();
+  }catch{toast('⚠️ Erro ao atualizar dados');}
 }
 
-/* ==== RENDER ==== */
+/* ==== RENDERIZAÇÃO ==== */
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
-  box.innerHTML='';
-  checklistCache.forEach(t=>{
-    const feita = historicoCache.some(h=>h.tarefa===t.tarefa && h.status.includes('Feito'));
-    const btnStyle = feita?'background:var(--success);color:#fff':'';
-    box.innerHTML+=`
+
+  const histMap=new Set(historicoCache.filter(h=>h.status.includes('Feito')).map(h=>h.tarefa));
+  const html=checklistCache.map(t=>{
+    const feita=histMap.has(t.tarefa);
+    return `
       <div class="item">
         <div class="${feita?'done':''}">${t.tarefa}</div>
-        <button class="btn small" style="${btnStyle}"
+        <button class="btn small" style="${feita?'background:var(--success);color:#fff':''}"
           onclick="${feita?`mostrarHistorico('${t.tarefa}')`:`marcarFeito(this,'${t.tarefa}')`}">
           ${feita?'✔ Feita':'Fazer'}
         </button>
       </div>`;
-  });
+  }).join('');
+  box.innerHTML=html;
 }
 
 /* ==== MARCAR FEITO ==== */
 async function marcarFeito(btn,tarefa){
-  btn.textContent='✔ Feita';
-  btn.style.background='var(--success)';
-  btn.style.color='#fff';
-  btn.disabled=true;
+  btn.textContent='✔ Feita'; btn.style.background='var(--success)'; btn.style.color='#fff'; btn.disabled=true;
+  const novo={tarefa,status:'Feito',gerente:gerenteAtual,data:new Date().toLocaleString()};
+  historicoCache.push(novo);
+  localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
+  toast(`✅ ${tarefa} feita por ${gerenteAtual}`);
 
-  const registro = {
-    action:'registrarHistorico',
-    empresa:empresaAtual,
-    gerente:gerenteAtual,
-    tarefa:tarefa,
-    status:'Feito'
-  };
-  try{
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify(registro)});
-    historicoCache.push({tarefa,status:'Feito',gerente:gerenteAtual,data:new Date().toLocaleString()});
-    localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
-    toast(`✅ ${tarefa} feita por ${gerenteAtual}`);
-  }catch{toast('⚠️ Erro ao registrar tarefa.');}
+  try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'})});}
+  catch{}
 }
 
 /* ==== MOSTRAR HISTÓRICO ==== */
 function mostrarHistorico(tarefa){
-  const registros = historicoCache.filter(h=>h.tarefa===tarefa);
-  const msg = registros.map(r=>`${r.data} • ${r.gerente} • ${r.status}`).join('\n') || 'Sem registros recentes.';
-  alert(`📋 Histórico de "${tarefa}"\n\n${msg}`);
+  const hist=historicoCache.filter(h=>h.tarefa===tarefa);
+  if(!hist.length)return alert('Sem registros recentes.');
+  alert('📋 Histórico:\n\n'+hist.map(h=>`${h.data} • ${h.gerente} • ${h.status}`).join('\n'));
 }
 
 /* ==== FINALIZAR ==== */
 async function concluirChecklist(){
   const btn=event.target;
-  btn.disabled=true;
-  btn.textContent='Processando...';
+  btn.disabled=true; btn.textContent='Processando...';
   try{
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
-      action:'finalizarChecklist',
-      empresa:empresaAtual,
-      gerente:gerenteAtual
-    })});
-    toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'finalizarChecklist',empresa:empresaAtual,gerente:gerenteAtual})});
     historicoCache.push({tarefa:'--- FIM DO CHECKLIST ---',status:'Finalizado',gerente:gerenteAtual,data:new Date().toLocaleString(),divisor:'Sim'});
     localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
-    setTimeout(()=>window.location.reload(),1500);
+    toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
+    setTimeout(()=>window.location.reload(),1200);
   }catch{
     toast('⚠️ Erro ao finalizar checklist');
-    btn.disabled=false;btn.textContent='✅ Concluir Check-list';
+    btn.disabled=false; btn.textContent='✅ Concluir Check-list';
   }
 }
 
@@ -199,14 +186,12 @@ function toast(msg){
   const el=$('#toast');
   el.textContent=msg;
   el.style.display='block';
-  setTimeout(()=>el.style.display='none',2500);
+  clearTimeout(el.timeout);
+  el.timeout=setTimeout(()=>el.style.display='none',2000);
 }
 
-/* ==== BACKGROUND UPDATE ==== */
-setInterval(()=>carregarChecklist(true),60*60*1000);
-
-/* ==== INIT ==== */
-carregarChecklist();
+/* ==== BACKGROUND REFRESH ==== */
+setInterval(atualizarEmSegundoPlano,3600000);
 </script>
 </body>
 </html>
