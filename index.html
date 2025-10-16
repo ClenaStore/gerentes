@@ -25,15 +25,19 @@ header{position:sticky;top:0;z-index:20;background:var(--card);color:var(--accen
   box-shadow:0 8px 28px rgba(0,0,0,.28);transition:transform .15s ease;
   min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}
 .card:active{transform:scale(.97)}
-.btn{width:100%;padding:12px;background:var(--accent);color:#000;border:0;border-radius:10px;font-weight:700;cursor:pointer;position:relative;overflow:hidden}
+.btn{width:100%;padding:12px;background:var(--accent);color:#000;border:0;border-radius:10px;font-weight:700;cursor:pointer;position:relative;overflow:hidden;transition:.3s}
 .btn.loading::after{
   content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;
-  border:3px solid rgba(0,0,0,.2);border-top:3px solid #000;border-radius:50%;
+  border:3px solid rgba(0,0,0,.3);border-top:3px solid #000;border-radius:50%;
   animation:spin 1s linear infinite;background:none;
 }
+.btn.done{background:var(--success)!important;color:#fff}
 .input,.select,.textarea{width:100%;padding:12px;border-radius:10px;border:0;background:#334155;color:#fff;margin:6px 0 10px;font-size:14px}
 .item{background:#334155;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.done{color:var(--success);text-decoration:line-through}
+.done-text{color:var(--success);text-decoration:line-through}
+#overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;visibility:hidden;transition:.2s}
+#overlay.visible{opacity:1;visibility:visible}
+.spinner{width:48px;height:48px;border:6px solid #334155;border-top:6px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .view{display:none}.view.active{display:block}
 .topbar{position:sticky;top:0;background:var(--bg);padding:8px 0;margin:-14px -14px 8px -14px;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -46,6 +50,7 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <body>
 
 <header>🧭 Painel de Gerência</header>
+<div id="overlay"><div class="spinner"></div></div>
 
 <!-- LOGIN -->
 <section id="view-login" class="view active">
@@ -143,6 +148,8 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 const LOGIN_URL='https://gerentes.clena.com.br/api/login';
 const GAS_URL='https://script.google.com/macros/s/AKfycbzO-GznI0QpgKPvwkpt4e3SSslad5i3QagsgKbQr1v5i5DTtHa0CPzUfsV3RhFGD0Vf/exec';
 const $=s=>document.querySelector(s);
+const showOverlay=()=>$('#overlay').classList.add('visible');
+const hideOverlay=()=>$('#overlay').classList.remove('visible');
 function normalizeNoAccent(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
 const cache={checklist:null,manutencoes:null};
 
@@ -155,7 +162,7 @@ function showView(v){
   if(v==='relatorios')renderRelatorios();
 }
 
-/* login */
+/* LOGIN */
 window.onload=()=>{
   const sel=$('#usuarioSelect');
   ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','MERCATTO_JAQUELINE','MERCATTO_IVANIO','DELICIA_RUAN','DELICIA_VALCIR']
@@ -166,19 +173,20 @@ window.onload=()=>{
 async function login(){
   const usuario=$('#usuarioSelect').value,senha=$('#senha').value.trim(),msg=$('#loginMsg');
   if(!usuario||!senha){msg.textContent='Preencha todos os campos.';return;}
-  msg.textContent='';
+  msg.textContent='';showOverlay();
   try{
     const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);const data=await res.json();
-    if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';return;}
+    if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';hideOverlay();return;}
     const empNorm=normalizeNoAccent(data.empresa);
     localStorage.setItem('gerente_id',usuario);localStorage.setItem('gerente_senha',senha);
     localStorage.setItem('empresa',empNorm);localStorage.setItem('empresaOriginal',data.empresa);
     $('#empresaNome').textContent=data.empresa;
-    preloadData();showView('home');
-  }catch{msg.textContent='Erro de conexão.';}
+    preloadData();hideOverlay();showView('home');
+  }catch{msg.textContent='Erro de conexão.';hideOverlay();}
 }
 function logout(){localStorage.clear();showView('login');}
 
+/* carregamento paralelo */
 async function preloadData(){
   const emp=localStorage.getItem('empresa');
   Promise.allSettled([
@@ -196,22 +204,19 @@ function renderChecklist(){
     const el=document.createElement('div');el.className='item';
     const btnText=t.status==='Concluído'?'✔ Feito':'Marcar';
     const disabled=t.status==='Concluído'?'disabled':'';
-    el.innerHTML=`<div class="txt ${t.status==='Concluído'?'done':''}">${t.tarefa}</div>
-      <button class="btn" ${disabled} onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${btnText}</button>`;
+    el.innerHTML=`<div class="txt ${t.status==='Concluído'?'done-text':''}">${t.tarefa}</div>
+      <button class="btn ${t.status==='Concluído'?'done':''}" ${disabled} onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${btnText}</button>`;
     box.appendChild(el);
   });
 }
 async function marcarChecklist(btn,emp,linha){
   btn.classList.add('loading');btn.disabled=true;
   try{
-    const res=await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${emp}&linha=${linha}`);
-    const data=await res.json();
-    btn.textContent='✔ Feito';btn.classList.remove('loading');btn.style.background='var(--success)';
-    btn.parentElement.querySelector('.txt').classList.add('done');
-    alert('✅ '+(data.msg||'Tarefa concluída!'));
+    await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${emp}&linha=${linha}`);
+    btn.classList.remove('loading');btn.classList.add('done');btn.textContent='✔ Feito';
+    btn.parentElement.querySelector('.txt').classList.add('done-text');
   }catch{
-    alert('Erro ao atualizar, tente novamente.');
-    btn.disabled=false;btn.classList.remove('loading');
+    btn.classList.remove('loading');btn.disabled=false;
   }
 }
 
@@ -224,21 +229,19 @@ function renderManutencoes(){
     const el=document.createElement('div');el.className='item';
     const btnText=m.status==='Feita'?'✔ Feita':'Concluir';
     const disabled=m.status==='Feita'?'disabled':'';
-    el.innerHTML=`<div class="txt ${m.status==='Feita'?'done':''}">${m.tarefa}</div>
-      <button class="btn" ${disabled} onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${btnText}</button>`;
+    el.innerHTML=`<div class="txt ${m.status==='Feita'?'done-text':''}">${m.tarefa}</div>
+      <button class="btn ${m.status==='Feita'?'done':''}" ${disabled} onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${btnText}</button>`;
     box.appendChild(el);
   });
 }
 async function marcarManutencao(btn,emp,linha){
   btn.classList.add('loading');btn.disabled=true;
   try{
-    const res=await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${emp}&linha=${linha}`);
-    const data=await res.json();
-    btn.textContent='✔ Feita';btn.classList.remove('loading');btn.style.background='var(--success)';
-    btn.parentElement.querySelector('.txt').classList.add('done');
-    alert('🔧 '+(data.msg||'Manutenção concluída!'));
+    await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${emp}&linha=${linha}`);
+    btn.classList.remove('loading');btn.classList.add('done');btn.textContent='✔ Feita';
+    btn.parentElement.querySelector('.txt').classList.add('done-text');
   }catch{
-    alert('Erro ao atualizar.');btn.disabled=false;btn.classList.remove('loading');
+    btn.classList.remove('loading');btn.disabled=false;
   }
 }
 
@@ -246,11 +249,10 @@ async function marcarManutencao(btn,emp,linha){
 async function registrarLancamento(){
   const empresa=localStorage.getItem('empresa'),cat=$('#categoria').value,desc=$('#descricao').value,qtd=$('#quantidade').value;
   if(!cat||!desc||!qtd)return alert('Preencha todos os campos!');
-  const btn=document.querySelector('#view-desperdicios .btn');
-  btn.classList.add('loading');btn.disabled=true;
+  showOverlay();
   await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria:cat,descricao:desc,qtd})});
-  btn.classList.remove('loading');btn.disabled=false;
-  alert('Registro salvo!');$('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
+  hideOverlay();
+  $('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
 }
 
 /* relatórios */
@@ -264,11 +266,9 @@ function renderRelatorios(){
 /* envio manual de resumo */
 async function enviarResumoAgora(){
   const empresa=localStorage.getItem('empresaOriginal')||localStorage.getItem('empresa');
-  const btn=document.querySelector('#view-home .btn');
-  btn.classList.add('loading');btn.disabled=true;
+  showOverlay();
   await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'enviarResumoAgora',empresa})});
-  btn.classList.remove('loading');btn.disabled=false;
-  alert('📧 Resumo solicitado! Será enviado aos e-mails configurados.');
+  hideOverlay();
 }
 </script>
 </body>
