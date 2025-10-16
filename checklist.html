@@ -93,15 +93,13 @@ let checklistCache = [];
 let historicoCache = [];
 let ultimoUpdate = 0;
 
-/* ==== CARREGAMENTO EFICIENTE ==== */
+/* ==== CARREGAMENTO ==== */
 (async()=>{
   try{
     checklistCache = JSON.parse(localStorage.getItem('checklistCache')||'[]');
     historicoCache = JSON.parse(localStorage.getItem('historicoCache')||'[]');
     ultimoUpdate = parseInt(localStorage.getItem('lastUpdate')||0);
-
-    renderChecklist(); // exibe rápido
-
+    renderChecklist();
     const precisaAtualizar = (Date.now()-ultimoUpdate) > 3600000 || !checklistCache.length;
     if(precisaAtualizar) await atualizarEmSegundoPlano();
   }catch{toast('⚠️ Erro ao carregar cache.');}
@@ -127,9 +125,8 @@ async function atualizarEmSegundoPlano(){
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
-
   const histMap=new Set(historicoCache.filter(h=>h.status.includes('Feito')).map(h=>h.tarefa));
-  const html=checklistCache.map(t=>{
+  box.innerHTML = checklistCache.map(t=>{
     const feita=histMap.has(t.tarefa);
     return `
       <div class="item">
@@ -140,7 +137,6 @@ function renderChecklist(){
         </button>
       </div>`;
   }).join('');
-  box.innerHTML=html;
 }
 
 /* ==== MARCAR FEITO ==== */
@@ -150,14 +146,16 @@ async function marcarFeito(btn,tarefa){
   historicoCache.push(novo);
   localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
   toast(`✅ ${tarefa} feita por ${gerenteAtual}`);
-
-  try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'})});}
-  catch{}
+  try{
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
+      action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'
+    })});
+  }catch{}
 }
 
 /* ==== MOSTRAR HISTÓRICO ==== */
 function mostrarHistorico(tarefa){
-  const hist=historicoCache.filter(h=>h.tarefa===tarefa);
+  const hist=historicoCache.filter(h=>h.tarefa===t.tarefa);
   if(!hist.length)return alert('Sem registros recentes.');
   alert('📋 Histórico:\n\n'+hist.map(h=>`${h.data} • ${h.gerente} • ${h.status}`).join('\n'));
 }
@@ -167,11 +165,27 @@ async function concluirChecklist(){
   const btn=event.target;
   btn.disabled=true; btn.textContent='Processando...';
   try{
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'finalizarChecklist',empresa:empresaAtual,gerente:gerenteAtual})});
-    historicoCache.push({tarefa:'--- FIM DO CHECKLIST ---',status:'Finalizado',gerente:gerenteAtual,data:new Date().toLocaleString(),divisor:'Sim'});
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
+      action:'finalizarChecklist',empresa:empresaAtual,gerente:gerenteAtual
+    })});
+    historicoCache.push({
+      tarefa:'--- FIM DO CHECKLIST ---',
+      status:'Finalizado',
+      gerente:gerenteAtual,
+      data:new Date().toLocaleString(),
+      divisor:'Sim'
+    });
     localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
     toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
-    setTimeout(()=>window.location.reload(),1200);
+
+    // 🔁 Limpa e reinicia as tarefas pendentes sem recarregar tudo
+    setTimeout(()=>{
+      historicoCache = [];
+      localStorage.setItem('historicoCache','[]');
+      renderChecklist();
+      btn.disabled=false;
+      btn.textContent='✅ Concluir Check-list';
+    },1200);
   }catch{
     toast('⚠️ Erro ao finalizar checklist');
     btn.disabled=false; btn.textContent='✅ Concluir Check-list';
