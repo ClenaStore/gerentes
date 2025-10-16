@@ -84,32 +84,38 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 const GAS_URL='https://script.google.com/macros/s/AKfycbw7L7EltP8gOCvTNhqOhmecicOohbZmznHYZXSzCFplW3GU096isvFu_nsfNl-fawoA/exec';
 const $=s=>document.querySelector(s);
 
-let fullLogin=localStorage.getItem('gerente') || 'MERCATTO DELÍCIA_GERENTE';
+/* ================================
+   🔹 LER USUÁRIO SALVO NO LOGIN
+================================ */
+let usuarioCompleto = localStorage.getItem('usuario') || 'USER_MERCATTO_YURI';
 let empresaAtual='', gerenteAtual='';
 
-/* === Extrai empresa e gerente === */
-if(fullLogin.includes('_')){
-  [empresaAtual,gerenteAtual]=fullLogin.split('_');
-}else{
-  empresaAtual='MERCATTO DELÍCIA';
-  gerenteAtual=fullLogin;
+if(usuarioCompleto.startsWith('USER_')){
+  const partes = usuarioCompleto.split('_');
+  empresaAtual = partes[1] ? partes[1].toUpperCase() : 'MERCATTO';
+  gerenteAtual = partes[2] ? partes[2].charAt(0).toUpperCase()+partes[2].slice(1).toLowerCase() : 'Gerente';
+} else {
+  empresaAtual = 'MERCATTO';
+  gerenteAtual = 'Gerente';
 }
 
-$('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
-$('#usuarioInfo').textContent=`Responsável: ${gerenteAtual}`;
+/* Nome de exibição */
+let nomeEmpresaDisplay = (empresaAtual==='MERCATTO') ? 'MERCATTO DELÍCIA' : 'DELÍCIA GOURMET';
+$('#empresaTitulo').textContent = `Empresa: ${nomeEmpresaDisplay}`;
+$('#usuarioInfo').textContent = `Gerente: ${gerenteAtual}`;
 
 let checklist=[],historico=[],ultimoFechamento='';
 
-/* === INÍCIO === */
+/* ===== INÍCIO ===== */
 window.onload=async()=>{await carregarDados();};
 
-/* === CARREGAR CHECKLIST + HISTÓRICO === */
+/* ===== CARREGAR CHECKLIST E HISTÓRICO ===== */
 async function carregarDados(){
   $('#overlay').style.display='flex';
   try{
     const [resCheck,resHist]=await Promise.all([
-      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`),
-      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`)
+      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(nomeEmpresaDisplay)}`),
+      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(nomeEmpresaDisplay)}`)
     ]);
     checklist=await resCheck.json();
     historico=await resHist.json();
@@ -125,7 +131,7 @@ async function carregarDados(){
   }
 }
 
-/* === RENDER === */
+/* ===== RENDER ===== */
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklist.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
@@ -144,7 +150,7 @@ function renderChecklist(){
   });
 }
 
-/* === MARCAR FEITA === */
+/* ===== MARCAR FEITA ===== */
 async function marcarFeito(btn,tarefa){
   btn.style.background='var(--success)';
   btn.style.color='#fff';
@@ -153,7 +159,7 @@ async function marcarFeito(btn,tarefa){
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
       action:'registrarHistorico',
-      empresa:empresaAtual,
+      empresa:nomeEmpresaDisplay,
       gerente:gerenteAtual,
       tarefa:tarefa,
       status:`Feito`
@@ -164,17 +170,13 @@ async function marcarFeito(btn,tarefa){
   }
 }
 
-/* === MOSTRAR HISTÓRICO === */
+/* ===== MOSTRAR HISTÓRICO ===== */
 function mostrarHistorico(tarefa){
   const registros=historico.filter(h=>h.tarefa===tarefa && (!ultimoFechamento||h.data>ultimoFechamento));
-  let msg='Sem histórico recente.';
-  if(registros.length){
-    msg=registros.map(r=>`<p><b>${r.data}</b><br>${r.status}<br><small>Por: ${r.gerente}</small></p>`).join('<hr>');
-  }
   alert(`📋 Histórico de "${tarefa}"\n\n${registros.map(r=>`${r.data} - ${r.gerente} - ${r.status}`).join('\n')||'Sem registros'}`);
 }
 
-/* === FINALIZAR === */
+/* ===== FINALIZAR ===== */
 async function concluirChecklist(){
   const btn=event.target;
   btn.disabled=true;
@@ -182,7 +184,7 @@ async function concluirChecklist(){
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
       action:'finalizarChecklist',
-      empresa:empresaAtual,
+      empresa:nomeEmpresaDisplay,
       gerente:gerenteAtual
     })});
     toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
@@ -192,10 +194,10 @@ async function concluirChecklist(){
   }
 }
 
-/* === VOLTAR === */
+/* ===== VOLTAR ===== */
 function voltar(){window.location.href='index.html';}
 
-/* === TOAST === */
+/* ===== TOAST ===== */
 function toast(msg){
   const el=$('#toast');
   el.textContent=msg;
