@@ -55,7 +55,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 <div class="container">
   <div class="section" style="text-align:center">
     <h3 id="empresaTitulo"></h3>
-    <p id="carregando">Carregando tarefas...</p>
   </div>
 
   <div class="section" id="listaChecklist"></div>
@@ -74,19 +73,20 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 <div class="toast" id="toast"></div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxcaEc7BTJf_rAxgocJnju4I8ujMrzJqLYgoY1UhLkOunhYM_bIk2ofzQF5GXliw31/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwiDkDvOmA7qMiwZy4laWTIISJooB1BorIara6pErv3NfxigkklgzGS0Mor9KvMQZr5/exec';
 const $ = s => document.querySelector(s);
 
 let empresaAtual = localStorage.getItem('empresa') || 'MERCATTO DELÍCIA';
 let gerenteAtual = localStorage.getItem('gerente') || 'Gerente';
 let checklist = [];
 
+/* === INÍCIO === */
 window.onload = () => {
   $('#empresaTitulo').textContent = `Empresa: ${empresaAtual}`;
   carregarChecklist();
 };
 
-/* === CARREGAR === */
+/* === CARREGAR CHECKLIST === */
 async function carregarChecklist(){
   try{
     const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`);
@@ -98,10 +98,10 @@ async function carregarChecklist(){
   }
 }
 
-/* === RENDER === */
+/* === RENDERIZAR === */
 function renderChecklist(){
   const box = $('#listaChecklist');
-  if(!checklist.length){box.innerHTML='<p>Nenhuma tarefa encontrada.</p>';return;}
+  if(!checklist.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
   box.innerHTML = checklist.map(t=>`
     <div class="item">
       <div>${t.tarefa}</div>
@@ -109,7 +109,7 @@ function renderChecklist(){
     </div>`).join('');
 }
 
-/* === MARCAR FEITO === */
+/* === MARCAR COMO FEITO === */
 async function marcarFeito(btn,tarefa){
   btn.style.background='var(--success)';
   btn.style.color='#fff';
@@ -124,16 +124,16 @@ async function marcarFeito(btn,tarefa){
         empresa:empresaAtual,
         gerente:gerenteAtual,
         tarefa:tarefa,
-        status:'Feito'
+        status:`Feito por ${gerenteAtual}`
       })
     });
-    toast('✅ '+tarefa+' registrada no histórico');
+    toast(`✅ ${tarefa} feita por ${gerenteAtual}`);
   }catch{
-    toast('⚠️ Erro ao registrar no histórico');
+    toast('⚠️ Erro ao registrar tarefa!');
   }
 }
 
-/* === FINALIZAR === */
+/* === FINALIZAR CHECKLIST === */
 async function concluirChecklist(){
   const btn = event.target;
   btn.disabled = true;
@@ -147,10 +147,10 @@ async function concluirChecklist(){
         gerente:gerenteAtual
       })
     });
-    toast('🎯 Checklist finalizado!');
+    toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
     setTimeout(()=>window.location.reload(),1200);
   }catch{
-    toast('⚠️ Erro ao finalizar');
+    toast('⚠️ Erro ao finalizar checklist');
   }
 }
 
