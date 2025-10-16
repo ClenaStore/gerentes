@@ -34,6 +34,7 @@ header{
   position:relative;
 }
 .btn:hover{background:var(--accent2);transform:scale(1.02)}
+.btn.small{width:auto;min-width:85px;padding:6px 10px;font-size:14px}
 .btn.loading{opacity:.6;pointer-events:none}
 .btn.loading::after{
   content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;
@@ -102,6 +103,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
   <div class="container">
     <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>✅ Check-list Diário</h3></div>
     <div class="section" id="listChecklist"></div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn" id="btnConcluir" onclick="concluirChecklist()">✅ Concluir Check-list</button>
+    </div>
   </div>
 </section>
 
@@ -157,6 +161,7 @@ const GAS_URL='https://script.google.com/macros/s/AKfycbzO-GznI0QpgKPvwkpt4e3SSs
 const $=s=>document.querySelector(s);
 const cache={checklist:[],manutencoes:[]};
 let empresaAtual="";
+let feitos=[];
 
 const views=['login','home','checklist','manutencoes','desperdicios','relatorios','links'];
 function showView(v){
@@ -210,26 +215,32 @@ function renderChecklist(){
     box.innerHTML+=`
       <div class="item">
         <div class="txt ${done?'done':''}">${t.tarefa}</div>
-        <button class="btn" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
-          onclick="marcarChecklist(this,'${empresaAtual}','${t.tarefa}',${t.linha})">${done?'✔ Feito':'Marcar'}</button>
+        <button class="btn small" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
+          onclick="marcarChecklist(this,'${empresaAtual}','${t.tarefa}',${t.linha})">${done?'✔ Feito':'Feito'}</button>
       </div>`;
   });
 }
 
 async function marcarChecklist(btn,emp,tarefa,linha){
-  btn.classList.add('loading');
-  try{
-    await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(emp)}&tarefa=${encodeURIComponent(tarefa)}&linha=${linha}`);
-    btn.classList.remove('loading');
-    btn.style.background='var(--success)';
-    btn.textContent='✔ Feito';
-    btn.disabled=true;
-    btn.parentElement.querySelector('.txt').classList.add('done');
-    toast('✅ Tarefa concluída!');
-  }catch{
-    toast('⚠️ Erro ao registrar!');
-    btn.classList.remove('loading');
-  }
+  btn.style.background='var(--success)';
+  btn.textContent='✔ Feito';
+  btn.disabled=true;
+  btn.parentElement.querySelector('.txt').classList.add('done');
+  feitos.push(tarefa);
+  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'salvarHistoricoChecklist',empresa:emp,tarefa,linha})});
+  toast('✅ Tarefa registrada!');
+}
+
+/* CONCLUIR CHECKLIST */
+async function concluirChecklist(){
+  if(!feitos.length)return toast('⚠️ Nenhuma tarefa marcada!');
+  const btn=$('#btnConcluir');btn.classList.add('loading');
+  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'fecharChecklist',empresa:empresaAtual,tarefas:feitos})});
+  btn.classList.remove('loading');
+  feitos=[];
+  await carregarDados();
+  renderChecklist();
+  toast('✅ Checklist concluído e reiniciado!');
 }
 
 /* MANUTENÇÕES */
@@ -242,8 +253,8 @@ function renderManutencoes(){
     box.innerHTML+=`
       <div class="item">
         <div class="txt ${done?'done':''}">${m.tarefa}</div>
-        <button class="btn" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
-          onclick="marcarManutencao(this,'${empresaAtual}','${m.tarefa}',${m.linha})">${done?'✔ Feita':'Concluir'}</button>
+        <button class="btn small" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
+          onclick="marcarManutencao(this,'${empresaAtual}','${m.tarefa}',${m.linha})">${done?'✔ Feita':'Feita'}</button>
       </div>`;
   });
 }
