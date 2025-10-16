@@ -167,11 +167,29 @@ async function concluirChecklist(){
   const btn=event.target;
   btn.disabled=true; btn.textContent='Processando...';
   try{
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'finalizarChecklist',empresa:empresaAtual,gerente:gerenteAtual})});
-    historicoCache.push({tarefa:'--- FIM DO CHECKLIST ---',status:'Finalizado',gerente:gerenteAtual,data:new Date().toLocaleString(),divisor:'Sim'});
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
+      action:'finalizarChecklist',
+      empresa:empresaAtual,
+      gerente:gerenteAtual
+    })});
+    historicoCache.push({
+      tarefa:'--- FIM DO CHECKLIST ---',
+      status:'Finalizado',
+      gerente:gerenteAtual,
+      data:new Date().toLocaleString(),
+      divisor:'Sim'
+    });
     localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
     toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
-    setTimeout(()=>window.location.reload(),1200);
+
+    // 🔁 Limpa apenas as marcações locais (nova rodada)
+    setTimeout(()=>{
+      historicoCache = [];
+      localStorage.setItem('historicoCache','[]');
+      renderChecklist();
+      toast('✅ Novo ciclo iniciado!');
+      btn.disabled=false; btn.textContent='✅ Concluir Check-list';
+    },1200);
   }catch{
     toast('⚠️ Erro ao finalizar checklist');
     btn.disabled=false; btn.textContent='✅ Concluir Check-list';
