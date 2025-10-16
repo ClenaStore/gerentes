@@ -13,33 +13,39 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
-  margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);
-  min-height:100vh;display:flex;flex-direction:column;
+  margin:0;font-family:'Inter',sans-serif;background:var(--bg);
+  color:var(--text);min-height:100vh;display:flex;flex-direction:column;
 }
 header{
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
   box-shadow:0 3px 8px rgba(0,0,0,.4);
 }
-.container{max-width:700px;margin:auto;padding:16px;width:100%;flex:1;}
+.container{max-width:600px;margin:auto;padding:16px;width:100%;flex:1;}
 .section{
-  background:var(--card);border-radius:16px;padding:18px;
+  background:var(--card);border-radius:16px;padding:16px;
   box-shadow:var(--shadow);margin-bottom:18px;
 }
 .item{
-  background:#1e293b;border-radius:10px;padding:10px 14px;
+  background:#1e293b;border-radius:10px;padding:12px;
   display:flex;align-items:center;justify-content:space-between;
-  margin:6px 0;transition:background .15s;
+  margin:8px 0;transition:background .15s;
+  font-size:15px;
 }
 .item:hover{background:#25334e;}
 .done{color:var(--success);}
 .btn{
   border:0;border-radius:8px;font-weight:600;
   background:var(--accent);color:#000;cursor:pointer;
-  transition:.2s;font-size:13px;padding:6px 12px;min-width:80px;
+  transition:.2s;font-size:14px;padding:10px 14px;
+  box-shadow:var(--shadow);min-width:110px;
 }
-.btn:hover{background:var(--accent2);}
-.btn.small{font-size:13px;}
+.btn:active{transform:scale(.97);}
+.btn.small{font-size:13px;padding:8px 10px;}
+.btn.done{
+  background:var(--success)!important;
+  color:#fff!important;
+}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--accent);color:#000;padding:10px 18px;border-radius:999px;
@@ -50,6 +56,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   position:fixed;inset:0;background:#000d;
   color:#fff;display:flex;align-items:center;justify-content:center;
   font-weight:600;font-size:18px;z-index:9999;
+}
+@media(max-width:480px){
+  header{font-size:16px;padding:12px;}
+  .btn{font-size:13px;padding:9px 12px;}
+  .item{font-size:14px;flex-direction:column;align-items:flex-start;gap:6px;}
+  .btn{align-self:flex-end;}
 }
 </style>
 </head>
@@ -68,7 +80,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   <div class="section" id="listaChecklist"></div>
 
   <div style="text-align:center;margin-top:20px">
-    <button class="btn" onclick="concluirChecklist()">✅ Concluir Check-list</button>
+    <button class="btn" id="btnConcluir" onclick="concluirChecklist()">✅ Concluir Check-list</button>
   </div>
 
   <div style="text-align:center;margin-top:20px">
@@ -134,9 +146,9 @@ function renderChecklist(){
     return `
       <div class="item">
         <div class="${feita?'done':''}">${t.tarefa}</div>
-        <button class="btn small" style="${feita?'background:var(--success);color:#fff':''}"
-          onclick="${feita?`mostrarHistorico('${t.tarefa}')`:`marcarFeito(this,'${t.tarefa}')`}">
-          ${feita?'✔ Feita':'Fazer'}
+        <button class="btn small ${feita?'done':''}"
+          onclick="${feita?'mostrarHistorico(\''+t.tarefa+'\')':'marcarFeito(this,\''+t.tarefa+'\')'}">
+          ${feita?'CONCLUÍDA':'Fazer'}
         </button>
       </div>`;
   }).join('');
@@ -145,14 +157,16 @@ function renderChecklist(){
 
 /* ==== MARCAR FEITO ==== */
 async function marcarFeito(btn,tarefa){
-  btn.textContent='✔ Feita'; btn.style.background='var(--success)'; btn.style.color='#fff'; btn.disabled=true;
+  btn.textContent='CONCLUÍDA';
+  btn.classList.add('done');
+  btn.disabled=true;
+
   const novo={tarefa,status:'Feito',gerente:gerenteAtual,data:new Date().toLocaleString()};
   historicoCache.push(novo);
   localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
-  toast(`✅ ${tarefa} feita por ${gerenteAtual}`);
-
-  try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'})});}
-  catch{}
+  try{
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'})});
+  }catch{}
 }
 
 /* ==== MOSTRAR HISTÓRICO ==== */
@@ -164,7 +178,7 @@ function mostrarHistorico(tarefa){
 
 /* ==== FINALIZAR ==== */
 async function concluirChecklist(){
-  const btn=event.target;
+  const btn=$('#btnConcluir');
   btn.disabled=true; btn.textContent='Processando...';
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
@@ -182,14 +196,14 @@ async function concluirChecklist(){
     localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
     toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
 
-    // 🔁 Limpa apenas as marcações locais (nova rodada)
+    // 🔁 Limpa apenas as marcações locais e libera novo ciclo
     setTimeout(()=>{
       historicoCache = [];
       localStorage.setItem('historicoCache','[]');
       renderChecklist();
       toast('✅ Novo ciclo iniciado!');
       btn.disabled=false; btn.textContent='✅ Concluir Check-list';
-    },1200);
+    },1000);
   }catch{
     toast('⚠️ Erro ao finalizar checklist');
     btn.disabled=false; btn.textContent='✅ Concluir Check-list';
