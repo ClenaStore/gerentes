@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Painel de Gerência - Delícia & Mercatto</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#0f1724" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1724">
 <style>
 :root{
-  --bg:#0f1724; --card:#1e293b; --accent:#ff8f1f; --text:#fff; --muted:#9aa6b2;
-  --success:#16a34a; --error:#ef4444; --overlay:rgba(0,0,0,.6); --chip:#0b1220;
+  --bg:#0f1724;--card:#1e293b;--accent:#ff8f1f;--text:#fff;--muted:#9aa6b2;
+  --success:#16a34a;--error:#ef4444;--overlay:rgba(0,0,0,.6);--chip:#0b1220;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;height:100%}
@@ -20,116 +20,76 @@ header{
   padding:14px 16px;text-align:center;font-size:18px;letter-spacing:.2px;
   box-shadow:0 2px 12px rgba(0,0,0,.45)
 }
-.container{
-  max-width:720px;margin:0 auto;padding:14px;height:calc(100dvh - 56px);overflow:auto
-}
-/* grid e cards */
-.grid{
-  display:grid; gap:12px;
-  grid-template-columns:repeat(2,1fr)
-}
-@media(min-width:520px){ .grid{ grid-template-columns:repeat(3,1fr) } }
-.card{
-  background:var(--card); border-radius:14px; padding:16px; text-align:center;
-  box-shadow:0 8px 28px rgba(0,0,0,.28); transition:transform .15s ease, box-shadow .15s ease;
-  min-height:120px; display:flex; flex-direction:column; justify-content:center; align-items:center;
-}
-.card h3{margin:4px 0 6px}
-.card p{margin:0;color:var(--muted);font-size:12px}
-.card:active{transform:scale(.98)}
-.btn{width:100%;padding:12px;background:var(--accent);color:#000;border:0;border-radius:10px;font-weight:700;cursor:pointer}
-.btn:active{transform:scale(.99)}
-.input, .select, .textarea{
-  width:100%;padding:12px;border-radius:10px;border:0;background:#334155;color:#fff;margin:6px 0 10px;font-size:14px
-}
-.row{display:flex;gap:8px}
-.tag{display:inline-block;background:var(--chip);color:var(--muted);padding:6px 10px;border-radius:999px;font-size:12px}
+.container{max-width:720px;margin:0 auto;padding:14px;height:calc(100dvh - 56px);overflow:auto}
 
-/* listas */
-.item{
-  background:#334155; border-radius:10px; padding:10px 12px; margin:8px 0;
-  display:flex; align-items:center; justify-content:space-between; gap:8px
+/* layout */
+.grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr)}}
+.card{
+  background:var(--card);border-radius:14px;padding:16px;text-align:center;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);transition:transform .15s ease;
+  min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center;
 }
-.item .txt{flex:1; text-align:left}
+.card h3{margin:4px 0 6px}.card p{margin:0;color:var(--muted);font-size:12px}
+.card:active{transform:scale(.98)}
+
+.btn{width:100%;padding:12px;background:var(--accent);color:#000;border:0;border-radius:10px;font-weight:700;cursor:pointer}
+.input,.select,.textarea{width:100%;padding:12px;border-radius:10px;border:0;background:#334155;color:#fff;margin:6px 0 10px;font-size:14px}
+.item{background:#334155;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.item .txt{flex:1;text-align:left}
 .done{color:var(--success);text-decoration:line-through}
 
-/* views */
-.view{display:none}
-.view.active{display:block}
-
 /* overlay */
-#overlay{
-  position:fixed; inset:0; background:var(--overlay);
-  display:flex; align-items:center; justify-content:center; z-index:100; opacity:0; visibility:hidden; transition:.2s
-}
-#overlay.visible{opacity:1; visibility:visible}
+#overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;visibility:hidden;transition:.2s}
+#overlay.visible{opacity:1;visibility:visible}
 .spinner{width:46px;height:46px;border:6px solid #334155;border-top:6px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* topbar das views internas */
-.topbar{
-  position:sticky; top:0; z-index:10; background:var(--bg);
-  padding:8px 0 10px; margin:-14px -14px 8px -14px; border-bottom:1px solid rgba(255,255,255,.06)
-}
-.topbar .back{appearance:none;background:transparent;border:0;color:var(--accent);font-weight:700}
-.section{background:var(--card); border-radius:14px; padding:14px; box-shadow:0 8px 28px rgba(0,0,0,.22); margin-bottom:12px}
+.view{display:none}.view.active{display:block}
+.topbar{position:sticky;top:0;background:var(--bg);padding:8px 0;margin:-14px -14px 8px -14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.back{background:transparent;border:0;color:var(--accent);font-weight:700}
+.section{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 8px 28px rgba(0,0,0,.22);margin-bottom:12px}
 footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
+.tag{display:inline-block;background:var(--chip);color:var(--muted);padding:6px 10px;border-radius:999px;font-size:12px}
 </style>
 </head>
 <body>
 
 <header>🧭 Painel de Gerência</header>
-
-<!-- overlay -->
 <div id="overlay"><div class="spinner"></div></div>
 
 <!-- LOGIN -->
 <section id="view-login" class="view active">
   <div class="container">
     <div class="section" style="text-align:center">
-      <h2 style="margin:6px 0 2px;color:var(--accent)">Identificação</h2>
-      <p class="tag">Acesso restrito</p>
+      <h2 style="color:var(--accent)">Identificação</h2>
       <label>Gerente</label>
-      <select id="usuarioSelect" class="select">
-        <option value="">Selecione...</option>
-      </select>
+      <select id="usuarioSelect" class="select"><option value="">Selecione...</option></select>
       <label>Senha</label>
-      <input id="senha" type="password" class="input" placeholder="Digite sua senha" />
+      <input id="senha" type="password" class="input" placeholder="Digite sua senha">
       <button class="btn" onclick="login()">Entrar</button>
-      <p id="loginMsg" style="color:var(--error);font-size:13px;margin:8px 0 0"></p>
+      <p id="loginMsg" style="color:var(--error);font-size:13px"></p>
     </div>
   </div>
 </section>
 
-<!-- DASHBOARD -->
+<!-- HOME -->
 <section id="view-home" class="view">
   <div class="container">
     <div class="section" style="display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <h2 id="empresaNome" style="margin:4px 0 2px"></h2>
-        <div id="chipsResumo" class="row"></div>
-      </div>
-      <button class="tag" onclick="logout()" title="Sair">Sair</button>
+      <div><h2 id="empresaNome"></h2><div id="chipsResumo" class="row"></div></div>
+      <button class="tag" onclick="logout()">Sair</button>
     </div>
-
     <div class="grid">
-      <div class="card" onclick="showView('checklist')">
-        <h3>✅ Check-list</h3><p>Verificar tarefas do dia</p>
-      </div>
-      <div class="card" onclick="showView('manutencoes')">
-        <h3>🧰 Manutenções</h3><p>Gestão de rotinas</p>
-      </div>
-      <div class="card" onclick="showView('desperdicios')">
-        <h3>🥣 Desperdícios</h3><p>Registrar sobras e devoluções</p>
-      </div>
-      <div class="card" onclick="showView('relatorios')">
-        <h3>📅 Histórico do Dia</h3><p>Relatórios</p>
-      </div>
-      <div class="card" onclick="showView('links')">
-        <h3>🌐 Acessos Rápidos</h3><p>Sites & Painéis</p>
-      </div>
+      <div class="card" onclick="showView('checklist')"><h3>✅ Check-list</h3><p>Verificar tarefas do dia</p></div>
+      <div class="card" onclick="showView('manutencoes')"><h3>🧰 Manutenções</h3><p>Rotinas técnicas</p></div>
+      <div class="card" onclick="showView('desperdicios')"><h3>🥣 Desperdícios</h3><p>Registrar sobras</p></div>
+      <div class="card" onclick="showView('relatorios')"><h3>📅 Histórico</h3><p>Resumo diário</p></div>
+      <div class="card" onclick="showView('links')"><h3>🌐 Acessos</h3><p>Sites e Painéis</p></div>
     </div>
-
+    <div style="margin-top:20px;text-align:center">
+      <button class="btn" onclick="enviarResumoAgora()">📧 Enviar resumo agora</button>
+    </div>
     <footer>©2025 Grupo Delícia & Mercatto</footer>
   </div>
 </section>
@@ -137,46 +97,33 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- CHECKLIST -->
 <section id="view-checklist" class="view">
   <div class="container">
-    <div class="topbar">
-      <button class="back" onclick="showView('home')">⬅ Voltar</button>
-    </div>
-    <div class="section">
-      <h3 style="margin:0 0 8px">✅ Check-list Diário</h3>
-      <div id="listChecklist"></div>
-    </div>
+    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
+    <div class="section"><h3>✅ Check-list Diário</h3><div id="listChecklist"></div></div>
   </div>
 </section>
 
 <!-- MANUTENCOES -->
 <section id="view-manutencoes" class="view">
   <div class="container">
-    <div class="topbar">
-      <button class="back" onclick="showView('home')">⬅ Voltar</button>
-    </div>
-    <div class="section">
-      <h3 style="margin:0 0 8px">🧰 Manutenções</h3>
-      <div id="listManutencoes"></div>
-    </div>
+    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
+    <div class="section"><h3>🧰 Manutenções</h3><div id="listManutencoes"></div></div>
   </div>
 </section>
 
 <!-- DESPERDICIOS -->
 <section id="view-desperdicios" class="view">
   <div class="container">
-    <div class="topbar">
-      <button class="back" onclick="showView('home')">⬅ Voltar</button>
-    </div>
+    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
     <div class="section">
-      <h3 style="margin:0 0 8px">🥣 Registrar Desperdícios / Sobras / Devoluções</h3>
+      <h3>🥣 Registrar Desperdícios / Sobras</h3>
       <label>Categoria</label>
       <select id="categoria" class="select">
-        <option value="">Selecione...</option>
-        <option>Desperdício</option><option>Sobra</option><option>Devolução</option>
+        <option value="">Selecione...</option><option>Desperdício</option><option>Sobra</option><option>Devolução</option>
       </select>
       <label>Descrição</label>
       <textarea id="descricao" class="textarea" placeholder="Descreva o ocorrido"></textarea>
       <label>Quantidade / Valor</label>
-      <input id="quantidade" class="input" placeholder="Ex: 2kg ou R$ 30,00" />
+      <input id="quantidade" class="input" placeholder="Ex: 2kg ou R$30,00">
       <button class="btn" onclick="registrarLancamento()">Registrar</button>
     </div>
   </div>
@@ -185,20 +132,10 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- RELATORIOS -->
 <section id="view-relatorios" class="view">
   <div class="container">
-    <div class="topbar">
-      <button class="back" onclick="showView('home')">⬅ Voltar</button>
-    </div>
+    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
     <div class="section">
-      <h3 style="margin:0 0 8px">📅 Histórico do Dia</h3>
-      <div id="relChecklist" class="section" style="background:#22314a;margin:-6px 0 10px">
-        <h4>✅ Check-list concluído</h4>
-        <div id="relChecklistData"></div>
-      </div>
-      <div id="relManut" class="section" style="background:#22314a;margin:-6px 0 10px">
-        <h4>🧰 Manutenções feitas</h4>
-        <div id="relManutData"></div>
-      </div>
-      <p class="tag">* Filtros por data e totais podem ser adicionados depois</p>
+      <h3>📅 Histórico do Dia</h3>
+      <div id="relChecklistData"></div><hr><div id="relManutData"></div>
     </div>
   </div>
 </section>
@@ -206,222 +143,121 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- LINKS -->
 <section id="view-links" class="view">
   <div class="container">
-    <div class="topbar">
-      <button class="back" onclick="showView('home')">⬅ Voltar</button>
-    </div>
+    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
     <div class="section">
-      <h3 style="margin:0 0 8px">🌐 Acessos Rápidos</h3>
+      <h3>🌐 Acessos Rápidos</h3>
       <a class="btn" href="https://mercattodelicia.com.br" target="_blank">🌎 Mercatto Delícia</a>
       <div style="height:8px"></div>
       <a class="btn" href="https://deliciagourmet.com.br" target="_blank">🍰 Delícia Gourmet</a>
       <div style="height:8px"></div>
-      <a class="btn" href="https://forms.gle/" target="_blank">📝 Formulário</a>
-      <div style="height:8px"></div>
-      <a class="btn" href="https://app.powerbi.com/" target="_blank">📊 Power BI</a>
+      <a class="btn" href="https://app.powerbi.com" target="_blank">📊 Power BI</a>
     </div>
   </div>
 </section>
 
 <script>
-/* ENDPOINTS */
 const LOGIN_URL='https://gerentes.clena.com.br/api/login';
-const GAS_URL='https://script.google.com/macros/s/AKfycbzC-iWavWeULqcq63BuYJtMZvRg_A-UMjSzbJcxQyjuIM8-n8FYKN-NOgHTXtpMrnPP/exec';
-
-/* USUÁRIOS FIXOS (front) */
-const usuarios=[
-  {id:'MERCATTO_DHEURE',nome:'Dheure (Mercatto)'},
-  {id:'MERCATTO_YURI',nome:'Yuri (Mercatto)'},
-  {id:'MERCATTO_GLEIDSA',nome:'Gleidsa (Mercatto)'},
-  {id:'MERCATTO_JAQUELINE',nome:'Jaqueline (Mercatto)'},
-  {id:'MERCATTO_IVANIO',nome:'Ivanio (Mercatto)'},
-  {id:'DELICIA_RUAN',nome:'Ruan (Delícia)'},
-  {id:'DELICIA_VALCIR',nome:'Valcir (Delícia)'},
-];
-
-/* UI helpers */
-const $=sel=>document.querySelector(sel);
+const GAS_URL='https://script.google.com/macros/s/AKfycbzO-GznI0QpgKPvwkpt4e3SSslad5i3QagsgKbQr1v5i5DTtHa0CPzUfsV3RhFGD0Vf/exec';
+const $=s=>document.querySelector(s);
 function showOverlay(){ $('#overlay').classList.add('visible') }
 function hideOverlay(){ $('#overlay').classList.remove('visible') }
+function normalizeNoAccent(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
 
-/* Navegação entre views (isola os cards e evita “vazamentos”) */
+/* navegação */
 const views=['login','home','checklist','manutencoes','desperdicios','relatorios','links'];
-function showView(name){
-  views.forEach(v=>{ const el=$(`#view-${v}`); if(el) el.classList.remove('active') });
-  const target=$(`#view-${name}`); if(target) target.classList.add('active');
-  // Cancela qualquer fetch anterior em andamento ao trocar de view
-  abortInFlight();
-  // Carregamentos em BG quando fizer sentido
-  const empresa=localStorage.getItem('empresa');
-  if(name==='home' && empresa){ bgPreload(empresa) }
-  if(name==='checklist'){ loadChecklist(empresa) }
-  if(name==='manutencoes'){ loadManutencoes(empresa) }
-  if(name==='relatorios'){ loadRelatorios(empresa) }
-}
+function showView(v){views.forEach(x=>$('#view-'+x)?.classList.remove('active'));$('#view-'+v)?.classList.add('active');
+  if(v==='checklist')loadChecklist();if(v==='manutencoes')loadManutencoes();if(v==='relatorios')loadRelatorios();}
 
-/* AbortController para evitar render “trocado” */
-let currentController=null;
-function abortInFlight(){
-  if(currentController){ currentController.abort(); currentController=null; }
-}
-function controlledFetch(url,opts={}){
-  abortInFlight();
-  currentController=new AbortController();
-  return fetch(url,{...opts,signal:currentController.signal});
-}
-
-/* Login + lembrar credenciais */
-window.addEventListener('load',()=>{
+/* login */
+window.onload=()=>{
   const sel=$('#usuarioSelect');
-  usuarios.forEach(u=>{
-    const o=document.createElement('option'); o.value=u.id; o.textContent=u.nome; sel.appendChild(o);
-  });
-
-  const savedUser=localStorage.getItem('gerente_id');
-  const savedPass=localStorage.getItem('gerente_senha');
-  if(savedUser && savedPass){
-    sel.value=savedUser; $('#senha').value=savedPass; login();
-  }
-});
-
+  ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','MERCATTO_JAQUELINE','MERCATTO_IVANIO','DELICIA_RUAN','DELICIA_VALCIR']
+  .forEach(id=>{const opt=document.createElement('option');opt.value=id;opt.textContent=id.replace('_',' ');sel.appendChild(opt);});
+  const u=localStorage.getItem('gerente_id'),s=localStorage.getItem('gerente_senha');
+  if(u&&s){sel.value=u;$('#senha').value=s;login();}
+};
 async function login(){
-  const usuario=$('#usuarioSelect').value;
-  const senha=$('#senha').value.trim();
-  const msg=$('#loginMsg');
-  if(!usuario||!senha){ msg.textContent='Preencha todos os campos.'; return; }
-  msg.textContent=''; showOverlay();
+  const usuario=$('#usuarioSelect').value,senha=$('#senha').value.trim(),msg=$('#loginMsg');
+  if(!usuario||!senha){msg.textContent='Preencha todos os campos.';return;}
+  msg.textContent='';showOverlay();
   try{
-    const res=await fetch(`${LOGIN_URL}?usuario=${encodeURIComponent(usuario)}&senha=${encodeURIComponent(senha)}`);
-    const data=await res.json();
-    if(!data.success){ msg.textContent=data.msg || 'Usuário ou senha incorretos.'; hideOverlay(); return; }
-    // salva credenciais conforme solicitado
-    localStorage.setItem('gerente_id',usuario);
-    localStorage.setItem('gerente_senha',senha);
-    localStorage.setItem('empresa',data.empresa);
-    $('#empresaNome').textContent=data.empresa;
-    $('#chipsResumo').innerHTML=`<span class="tag">Login OK</span>`;
-    hideOverlay();
-    showView('home');
-  }catch(e){
-    msg.textContent='Erro de conexão.'; hideOverlay();
-  }
+    const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);const data=await res.json();
+    if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';hideOverlay();return;}
+    const empNorm=normalizeNoAccent(data.empresa);
+    localStorage.setItem('gerente_id',usuario);localStorage.setItem('gerente_senha',senha);
+    localStorage.setItem('empresa',empNorm);localStorage.setItem('empresaOriginal',data.empresa);
+    $('#empresaNome').textContent=data.empresa;hideOverlay();showView('home');
+  }catch{msg.textContent='Erro de conexão.';hideOverlay();}
 }
-function logout(){
-  localStorage.removeItem('gerente_id');
-  localStorage.removeItem('gerente_senha');
-  // mantém 'empresa'? melhor limpar tudo:
-  localStorage.removeItem('empresa');
-  showView('login');
-}
+function logout(){localStorage.clear();showView('login');}
 
-/* Pré-carrega dados em segundo plano */
-let cache={ checklist:null, manutencoes:null, ts:0 };
-async function bgPreload(empresa){
-  const now=Date.now();
-  if(now - cache.ts < 30000) return; // evita spam (30s)
+/* checklist */
+async function loadChecklist(){
+  const empresa=localStorage.getItem('empresa');showOverlay();
   try{
-    const [c,m]=await Promise.all([
-      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`).then(r=>r.json()),
-      fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`).then(r=>r.json())
-    ]);
-    cache={checklist:c, manutencoes:m, ts:Date.now()};
-    // mostra um pequeno resumo na home
-    const concl=(c||[]).filter(x=>x.status==='Concluído').length;
-    const pend=(c||[]).length - concl;
-    $('#chipsResumo').innerHTML=`
-      <span class="tag">Tarefas: ${c.length||0}</span>
-      <span class="tag">Concluídas: ${concl}</span>
-      <span class="tag">Pendentes: ${pend<0?0:pend}</span>
-    `;
-  }catch(e){ /* silencioso */ }
+    const res=await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`);const data=await res.json();
+    const box=$('#listChecklist');box.innerHTML='';
+    if(!data.length){box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>';return;}
+    data.forEach(t=>{
+      const el=document.createElement('div');el.className='item';
+      el.innerHTML=`<div class="txt ${t.status==='Concluído'?'done':''}">${t.tarefa}</div>
+      <button class="btn" style="max-width:110px" onclick="marcarChecklist('${empresa}',${t.linha})">
+      ${t.status==='Concluído'?'✔ Feito':'Marcar'}</button>`;
+      box.appendChild(el);
+    });
+  }finally{hideOverlay();}
 }
+async function marcarChecklist(emp,linha){showOverlay();await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${emp}&linha=${linha}`);await loadChecklist();}
 
-/* CHECKLIST */
-async function loadChecklist(empresa){
-  showOverlay();
+/* manutenções */
+async function loadManutencoes(){
+  const empresa=localStorage.getItem('empresa');showOverlay();
   try{
-    let data = cache.checklist;
-    if(!data){ const r=await controlledFetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`); data=await r.json(); }
-    const box=$('#listChecklist'); box.innerHTML='';
-    if(!data || !data.length){ box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>'; }
-    else{
-      data.forEach(t=>{
-        const el=document.createElement('div'); el.className='item';
-        el.innerHTML=`
-          <div class="txt ${t.status==='Concluído'?'done':''}">${t.tarefa}</div>
-          <button class="btn" style="max-width:110px" onclick="marcarChecklist('${empresa}',${t.linha})">
-            ${t.status==='Concluído'?'✔ Feito':'Marcar'}
-          </button>`;
-        box.appendChild(el);
-      });
-    }
-  }finally{ hideOverlay(); }
+    const res=await fetch(`${GAS_URL}?action=manutencoes&empresa=${empresa}`);const data=await res.json();
+    const box=$('#listManutencoes');box.innerHTML='';
+    if(!data.length){box.innerHTML='<p class="tag">Nenhuma manutenção cadastrada.</p>';return;}
+    data.forEach(m=>{
+      const el=document.createElement('div');el.className='item';
+      el.innerHTML=`<div class="txt ${m.status==='Feita'?'done':''}">${m.tarefa}</div>
+      <button class="btn" style="max-width:110px" onclick="marcarManutencao('${empresa}',${m.linha})">
+      ${m.status==='Feita'?'✔ Feita':'Concluir'}</button>`;
+      box.appendChild(el);
+    });
+  }finally{hideOverlay();}
 }
-async function marcarChecklist(empresa,linha){
-  showOverlay();
-  await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
-  cache.checklist=null; // invalida cache
-  await loadChecklist(empresa);
-}
+async function marcarManutencao(emp,linha){showOverlay();await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${emp}&linha=${linha}`);await loadManutencoes();}
 
-/* MANUTENCOES */
-async function loadManutencoes(empresa){
-  showOverlay();
-  try{
-    let data = cache.manutencoes;
-    if(!data){ const r=await controlledFetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`); data=await r.json(); }
-    const box=$('#listManutencoes'); box.innerHTML='';
-    if(!data || !data.length){ box.innerHTML='<p class="tag">Nenhuma manutenção cadastrada.</p>'; }
-    else{
-      data.forEach(m=>{
-        const el=document.createElement('div'); el.className='item';
-        el.innerHTML=`
-          <div class="txt ${m.status==='Feita'?'done':''}">${m.tarefa}</div>
-          <button class="btn" style="max-width:110px" onclick="marcarManutencao('${empresa}',${m.linha})">
-            ${m.status==='Feita'?'✔ Feita':'Concluir'}
-          </button>`;
-        box.appendChild(el);
-      });
-    }
-  }finally{ hideOverlay(); }
-}
-async function marcarManutencao(empresa,linha){
-  showOverlay();
-  await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${encodeURIComponent(empresa)}&linha=${linha}`);
-  cache.manutencoes=null;
-  await loadManutencoes(empresa);
-}
-
-/* DESPERDICIOS */
+/* desperdício */
 async function registrarLancamento(){
-  const empresa=localStorage.getItem('empresa');
-  const categoria=$('#categoria').value;
-  const descricao=$('#descricao').value;
-  const qtd=$('#quantidade').value;
-  if(!categoria||!descricao||!qtd){ alert('Preencha todos os campos!'); return; }
+  const empresa=localStorage.getItem('empresa'),cat=$('#categoria').value,desc=$('#descricao').value,qtd=$('#quantidade').value;
+  if(!cat||!desc||!qtd)return alert('Preencha todos os campos!');
   showOverlay();
   try{
-    const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria,descricao,qtd})});
-    const data=await res.json(); alert(data.msg||'Registrado!');
-    $('#categoria').value=''; $('#descricao').value=''; $('#quantidade').value='';
-  }finally{ hideOverlay(); }
+    const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria:cat,descricao:desc,qtd})});
+    const d=await r.json();alert(d.msg||'Registrado!');$('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
+  }finally{hideOverlay();}
 }
 
-/* RELATORIOS (do dia) */
-async function loadRelatorios(empresa){
+/* relatórios */
+async function loadRelatorios(){
+  const empresa=localStorage.getItem('empresa');showOverlay();
+  try{
+    const res1=await fetch(`${GAS_URL}?action=checklist&empresa=${empresa}`);const c=await res1.json();
+    const res2=await fetch(`${GAS_URL}?action=manutencoes&empresa=${empresa}`);const m=await res2.json();
+    const concl=c.filter(x=>x.status==='Concluído'),feitas=m.filter(x=>x.status==='Feita');
+    $('#relChecklistData').innerHTML=concl.length?concl.map(x=>`<div class='item'><div class='txt'>✔ ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma tarefa concluída.</p>';
+    $('#relManutData').innerHTML=feitas.length?feitas.map(x=>`<div class='item'><div class='txt'>🔧 ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma manutenção finalizada.</p>';
+  }finally{hideOverlay();}
+}
+
+/* envio manual de resumo */
+async function enviarResumoAgora(){
+  const empresa=localStorage.getItem('empresaOriginal')||localStorage.getItem('empresa');
   showOverlay();
   try{
-    // usa cache se tiver, senão busca
-    const check = cache.checklist || await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresa)}`).then(r=>r.json());
-    const manut = cache.manutencoes || await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresa)}`).then(r=>r.json());
-
-    const concl = (check||[]).filter(c=>c.status==='Concluído');
-    const fezM = (manut||[]).filter(m=>m.status==='Feita');
-
-    const relC=$('#relChecklistData');
-    const relM=$('#relManutData');
-    relC.innerHTML = concl.length ? concl.map(c=>`<div class="item"><div class="txt">✔ ${c.tarefa}</div></div>`).join('') : '<p class="tag">Nenhuma tarefa concluída hoje.</p>';
-    relM.innerHTML = fezM.length ? fezM.map(m=>`<div class="item"><div class="txt">🔧 ${m.tarefa}</div></div>`).join('') : '<p class="tag">Nenhuma manutenção finalizada hoje.</p>';
-  }finally{ hideOverlay(); }
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'enviarResumoAgora',empresa})});
+    alert('📧 Resumo solicitado! Será enviado para os e-mails configurados.');
+  }finally{hideOverlay();}
 }
 </script>
 </body>
