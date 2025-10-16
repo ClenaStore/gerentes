@@ -7,40 +7,35 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0b1220;
-  --card: #1e293b;
-  --accent: #ff8f1f;
-  --accent2: #ffb347;
-  --text: #f8fafc;
-  --muted: #9aa6b2;
-  --success: #16a34a;
-  --error: #ef4444;
-  --chip: #0f172a;
-  --shadow: 0 4px 14px rgba(0,0,0,0.4);
+  --bg:#0b1220;
+  --card:#1e293b;
+  --accent:#ff8f1f;
+  --accent2:#ffb347;
+  --text:#f8fafc;
+  --muted:#9aa6b2;
+  --success:#16a34a;
+  --error:#ef4444;
+  --chip:#0f172a;
+  --shadow:0 4px 14px rgba(0,0,0,0.4);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body {
-  margin:0;font-family:Inter,system-ui,sans-serif;
-  background:var(--bg);color:var(--text);
-  display:flex;flex-direction:column;min-height:100vh;
+body{
+  margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);
+  color:var(--text);display:flex;flex-direction:column;min-height:100vh;
 }
-header {
+header{
   background:linear-gradient(90deg,var(--accent),var(--accent2));
-  color:#000;text-align:center;padding:16px 10px;font-weight:700;
-  letter-spacing:0.4px;font-size:18px;
-  box-shadow:0 2px 10px rgba(0,0,0,.5);
+  color:#000;text-align:center;padding:16px;font-weight:700;
+  font-size:18px;box-shadow:0 2px 10px rgba(0,0,0,.5);
 }
-.container {
-  flex:1;padding:16px;max-width:600px;margin:auto;width:100%;
-}
-h2,h3{margin:0 0 12px;color:var(--accent2)}
+.container{flex:1;padding:16px;max-width:600px;margin:auto;width:100%}
+h2,h3,h4{margin:0 0 12px;color:var(--accent2)}
 .view{display:none;animation:fadeIn .3s ease}
 .view.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.btn {
-  background:var(--accent);border:0;border-radius:10px;
-  color:#000;padding:12px;font-weight:600;width:100%;
-  cursor:pointer;transition:all .2s ease;
+.btn{
+  background:var(--accent);border:0;border-radius:10px;color:#000;
+  padding:12px;font-weight:600;width:100%;cursor:pointer;transition:all .2s ease;
 }
 .btn:hover{background:var(--accent2);transform:scale(1.02)}
 .btn.loading{opacity:.6;pointer-events:none;position:relative}
@@ -50,42 +45,38 @@ h2,h3{margin:0 0 12px;color:var(--accent2)}
   animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.input,.select,.textarea {
-  width:100%;padding:12px;border-radius:8px;
-  border:0;background:#334155;color:#fff;margin:8px 0;font-size:15px;
+.input,.select,.textarea{
+  width:100%;padding:12px;border-radius:8px;border:0;background:#334155;
+  color:#fff;margin:8px 0;font-size:15px;
 }
-.section {
+.section{
   background:var(--card);padding:18px;border-radius:14px;
   box-shadow:var(--shadow);margin-bottom:16px;
 }
-.cardgrid {
+.cardgrid{
   display:grid;gap:14px;
   grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
 }
-.card {
+.card{
   background:var(--card);padding:18px;border-radius:12px;text-align:center;
   box-shadow:var(--shadow);cursor:pointer;transition:transform .2s ease;
 }
 .card:hover{transform:scale(1.03)}
 .card h3{color:var(--accent2);margin:4px 0 6px}
-.tag {
+.tag{
   background:var(--chip);color:var(--muted);padding:6px 12px;
   border-radius:999px;font-size:12px;display:inline-block;
 }
-.item {
+.item{
   background:#334155;padding:10px 12px;border-radius:10px;
   display:flex;align-items:center;justify-content:space-between;margin:8px 0;
 }
 .done{text-decoration:line-through;color:var(--success)}
-.backbar {
-  display:flex;align-items:center;gap:8px;margin-bottom:10px;
-}
-.backbar button {
+.backbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.backbar button{
   background:none;border:0;color:var(--accent2);font-weight:700;font-size:15px;cursor:pointer;
 }
-footer {
-  text-align:center;color:var(--muted);font-size:12px;padding:14px 0;
-}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0;}
 </style>
 </head>
 <body>
@@ -197,7 +188,7 @@ function showView(v){
   if(v==='relatorios')renderRelatorios();
 }
 
-// Login automático
+// LOGIN
 window.onload=()=>{
   const sel=$('#usuarioSelect');
   ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','DELICIA_RUAN','DELICIA_VALCIR']
@@ -227,6 +218,7 @@ async function login(){
 
 function logout(){localStorage.clear();showView('login');}
 
+// Pré-carregar dados
 async function preloadData(){
   const emp=localStorage.getItem('empresa');
   cache.checklist=await fetch(`${GAS_URL}?action=checklist&empresa=${emp}`).then(r=>r.json());
