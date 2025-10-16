@@ -12,13 +12,16 @@
   --chip:#1e293b;--shadow:0 6px 18px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body{
+  margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;
+}
 header{
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
   box-shadow:0 3px 10px rgba(0,0,0,.4);
 }
-.container{max-width:700px;margin:auto;padding:16px;}
+.container{max-width:700px;margin:auto;padding:16px;flex:1;width:100%;}
 .section{
   background:var(--card);border-radius:16px;padding:18px;
   box-shadow:var(--shadow);margin-bottom:18px;
@@ -33,7 +36,7 @@ header{
 .btn{
   padding:8px 16px;border:0;border-radius:8px;font-weight:600;
   background:var(--accent);color:#000;cursor:pointer;
-  box-shadow:var(--shadow);transition:.2s;font-size:14px;
+  box-shadow:var(--shadow);transition:.2s;font-size:14px;position:relative;
 }
 .btn.small{padding:6px 10px;font-size:13px;width:90px;}
 .btn:hover{background:var(--accent2);transform:scale(1.03);}
@@ -44,7 +47,10 @@ header{
   animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.tag{background:var(--chip);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px;}
+.tag{
+  background:var(--chip);padding:6px 10px;border-radius:999px;
+  color:var(--muted);font-size:13px;text-align:center;display:inline-block;
+}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--accent);color:#000;padding:10px 20px;border-radius:999px;
@@ -57,9 +63,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 
 <header>✅ Check-list Diário</header>
 <div class="container">
-  <div class="section" id="listaChecklist">
-    <p class="tag">Carregando tarefas...</p>
+  <div class="section" style="text-align:center">
+    <h3 id="empresaTitulo"></h3>
+    <p class="tag" id="statusCarregando">Carregando tarefas...</p>
   </div>
+
+  <div class="section" id="listaChecklist"></div>
 
   <div style="text-align:center;margin-top:20px">
     <button class="btn" onclick="concluirChecklist()">✅ Concluir Check-list</button>
@@ -71,38 +80,54 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 
   <footer>©2025 Grupo Delícia & Mercatto</footer>
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
+/* === CONFIGURAÇÃO === */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwTBln1ES6yUL2a8u0Cnw9ZCZ2v-J7DNfiDSF1dePEELt6aW8WXYzEDIAzjrIVRp-59/exec';
 const $ = s => document.querySelector(s);
 
+/* === VARIÁVEIS === */
 let empresaAtual = localStorage.getItem('empresa') || 'MERCATTO DELÍCIA';
 let gerenteAtual = localStorage.getItem('gerente') || 'Gerente';
 let checklist = [];
 
-/* ===== CARREGAR LISTA ===== */
+/* === INICIALIZAÇÃO === */
+window.onload = () => {
+  $('#empresaTitulo').textContent = `Empresa: ${empresaAtual}`;
+  carregarChecklist();
+};
+
+/* === CARREGAR TAREFAS === */
 async function carregarChecklist(){
+  $('#statusCarregando').style.display = 'inline-block';
   try{
     const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`);
     const data = await res.json();
-    checklist = data || [];
+    checklist = Array.isArray(data) ? data : [];
     renderChecklist();
-  }catch{
-    $('#listaChecklist').innerHTML = '<p class="tag">Erro ao carregar tarefas.</p>';
+  }catch(err){
+    console.error(err);
+    $('#listaChecklist').innerHTML = '<p class="tag">⚠️ Erro ao carregar tarefas.</p>';
+  }finally{
+    $('#statusCarregando').style.display = 'none';
   }
 }
 
-/* ===== RENDERIZAR ===== */
+/* === RENDERIZAR CHECKLIST === */
 function renderChecklist(){
   const box = $('#listaChecklist');
-  if(!checklist.length){box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>';return;}
+  if(!checklist.length){
+    box.innerHTML = '<p class="tag">Nenhuma tarefa cadastrada para esta empresa.</p>';
+    return;
+  }
   box.innerHTML = checklist.map(t=>{
     const done = t.status==='Concluído';
     return `
       <div class="item">
         <div class="txt ${done?'done':''}">${t.tarefa}</div>
-        <button class="btn small" style="${done?'background:var(--success);color:#fff':''}" 
+        <button class="btn small ${done?'done-btn':''}" style="${done?'background:var(--success);color:#fff':''}"
           ${done?'disabled':''} onclick="marcarFeito(this,'${t.tarefa}')">
           ${done?'✔ Feito':'Fazer'}
         </button>
@@ -110,7 +135,7 @@ function renderChecklist(){
   }).join('');
 }
 
-/* ===== MARCAR COMO FEITO ===== */
+/* === MARCAR COMO FEITO === */
 async function marcarFeito(btn,tarefa){
   btn.classList.add('loading');
   try{
@@ -131,13 +156,14 @@ async function marcarFeito(btn,tarefa){
     btn.disabled=true;
     btn.parentElement.querySelector('.txt').classList.add('done');
     toast('✅ '+tarefa+' marcada como feita');
-  }catch{
+  }catch(err){
+    console.error(err);
     toast('⚠️ Erro ao registrar tarefa!');
     btn.classList.remove('loading');
   }
 }
 
-/* ===== CONCLUIR CHECKLIST ===== */
+/* === CONCLUIR CHECKLIST === */
 async function concluirChecklist(){
   const btn = event.target;
   btn.classList.add('loading');
@@ -153,25 +179,25 @@ async function concluirChecklist(){
     btn.classList.remove('loading');
     toast('🎯 Checklist finalizado e reiniciado!');
     carregarChecklist();
-  }catch{
+  }catch(err){
+    console.error(err);
     toast('⚠️ Erro ao concluir checklist!');
     btn.classList.remove('loading');
   }
 }
 
-/* ===== VOLTAR ===== */
-function voltar(){window.location.href='index.html';}
-
-/* ===== TOAST ===== */
-function toast(msg){
-  const el=$('#toast');
-  el.textContent=msg;
-  el.style.display='block';
-  setTimeout(()=>el.style.display='none',2500);
+/* === VOLTAR === */
+function voltar(){
+  window.location.href = 'index.html';
 }
 
-/* ===== INÍCIO ===== */
-carregarChecklist();
+/* === TOAST === */
+function toast(msg){
+  const el = $('#toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none',2500);
+}
 </script>
 </body>
 </html>
