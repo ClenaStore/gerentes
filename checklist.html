@@ -152,11 +152,16 @@ async function atualizarEmSegundoPlano(){
   }catch{toast('⚠️ Erro ao atualizar dados');}
 }
 
-/* ==== RENDERIZAÇÃO ==== */
+/* ==== RENDERIZAÇÃO (USA HISTÓRICO REAL GLOBAL) ==== */
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
-  const histMap=new Set(historicoCache.filter(h=>h.status.includes('Feito')).map(h=>h.tarefa));
+
+  // Considera como feita se existe qualquer registro "Feito" para essa tarefa (de qualquer gerente)
+  const histMap=new Set(historicoCache
+    .filter(h=>h.status && h.status.toLowerCase().includes('feito'))
+    .map(h=>h.tarefa));
+
   const html=checklistCache.map(t=>{
     const feita=histMap.has(t.tarefa);
     return `
@@ -176,7 +181,7 @@ async function marcarFeito(btn,tarefa){
   btn.textContent='CONCLUÍDA';
   btn.classList.add('done');
   btn.disabled=true;
-  const novo={tarefa,status:'Feito',gerente:gerenteAtual,data:new Date().toLocaleString()};
+  const novo={tarefa,status:'Feito',gerente:gerenteAtual,empresa:empresaAtual,data:new Date().toLocaleString()};
   historicoCache.push(novo);
   localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
   try{
@@ -190,7 +195,7 @@ async function marcarFeito(btn,tarefa){
   }catch{}
 }
 
-/* ==== MOSTRAR HISTÓRICO BONITO (FILTRO POR EMPRESA) ==== */
+/* ==== MOSTRAR HISTÓRICO BONITO ==== */
 async function mostrarHistorico(tarefa){
   const overlay=$('#overlay');
   overlay.textContent='Carregando histórico...';
@@ -200,7 +205,7 @@ async function mostrarHistorico(tarefa){
     const registros=await res.json();
     overlay.style.display='none';
 
-    const hist=registros.filter(h=>h.tarefa===t.tarefa && h.empresa===empresaAtual);
+    const hist=registros.filter(h=>h.tarefa===tarefa && h.empresa===empresaAtual);
     if(!hist.length)return toast('Sem registros anteriores.');
 
     const htmlItens=hist.map(h=>{
@@ -216,7 +221,7 @@ async function mostrarHistorico(tarefa){
     popup.className='popup-bg';
     popup.innerHTML=`
       <div class="popup">
-        <h3>📋 Histórico - ${t.tarefa}</h3>
+        <h3>📋 Histórico - ${tarefa}</h3>
         <ul>${htmlItens}</ul>
         <button onclick="this.closest('.popup-bg').remove()">Fechar</button>
       </div>`;
