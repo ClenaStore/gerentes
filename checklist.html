@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
-  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
+  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;
   --shadow:0 4px 10px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -40,11 +40,9 @@ header{
   transition:.2s;font-size:14px;padding:10px 14px;
   box-shadow:var(--shadow);min-width:110px;
 }
-.btn:active{transform:scale(.97);}
 .btn.small{font-size:13px;padding:8px 10px;}
 .btn.done{
-  background:var(--success)!important;
-  color:#fff!important;
+  background:var(--success)!important;color:#fff!important;
 }
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
@@ -105,16 +103,15 @@ let checklistCache = [];
 let historicoCache = [];
 let ultimoUpdate = 0;
 
-/* ==== CARREGAMENTO EFICIENTE ==== */
+/* ==== INICIALIZAÇÃO ==== */
 (async()=>{
   try{
     checklistCache = JSON.parse(localStorage.getItem('checklistCache')||'[]');
     historicoCache = JSON.parse(localStorage.getItem('historicoCache')||'[]');
     ultimoUpdate = parseInt(localStorage.getItem('lastUpdate')||0);
 
-    renderChecklist(); // exibe rápido
-
-    const precisaAtualizar = (Date.now()-ultimoUpdate) > 3600000 || !checklistCache.length;
+    renderChecklist();
+    const precisaAtualizar = (Date.now()-ultimoUpdate)>3600000 || !checklistCache.length;
     if(precisaAtualizar) await atualizarEmSegundoPlano();
   }catch{toast('⚠️ Erro ao carregar cache.');}
   $('#overlay').style.display='none';
@@ -139,7 +136,6 @@ async function atualizarEmSegundoPlano(){
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
-
   const histMap=new Set(historicoCache.filter(h=>h.status.includes('Feito')).map(h=>h.tarefa));
   const html=checklistCache.map(t=>{
     const feita=histMap.has(t.tarefa);
@@ -160,20 +156,37 @@ async function marcarFeito(btn,tarefa){
   btn.textContent='CONCLUÍDA';
   btn.classList.add('done');
   btn.disabled=true;
-
   const novo={tarefa,status:'Feito',gerente:gerenteAtual,data:new Date().toLocaleString()};
   historicoCache.push(novo);
   localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
   try{
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'})});
+    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
+      action:'registrarHistorico',
+      empresa:empresaAtual,
+      gerente:gerenteAtual,
+      tarefa,
+      status:'Feito'
+    })});
   }catch{}
 }
 
-/* ==== MOSTRAR HISTÓRICO ==== */
-function mostrarHistorico(tarefa){
-  const hist=historicoCache.filter(h=>h.tarefa===tarefa);
-  if(!hist.length)return alert('Sem registros recentes.');
-  alert('📋 Histórico:\n\n'+hist.map(h=>`${h.data} • ${h.gerente} • ${h.status}`).join('\n'));
+/* ==== MOSTRAR HISTÓRICO (REAL DA PLANILHA) ==== */
+async function mostrarHistorico(tarefa){
+  const overlay=$('#overlay');
+  overlay.textContent='Carregando histórico...';
+  overlay.style.display='flex';
+  try{
+    const res=await fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`);
+    const registros=await res.json();
+    overlay.style.display='none';
+    const hist=registros.filter(h=>h.tarefa===tarefa);
+    if(!hist.length)return alert('Sem registros anteriores para esta tarefa.');
+    const msg=hist.map(h=>`${h.data} • ${h.gerente||'—'} • ${h.status}`).join('\n');
+    alert(`📋 Histórico de "${tarefa}"\n\n${msg}`);
+  }catch(e){
+    overlay.style.display='none';
+    alert('⚠️ Erro ao carregar histórico completo.');
+  }
 }
 
 /* ==== FINALIZAR ==== */
@@ -195,10 +208,8 @@ async function concluirChecklist(){
     });
     localStorage.setItem('historicoCache',JSON.stringify(historicoCache));
     toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
-
-    // 🔁 Limpa apenas as marcações locais e libera novo ciclo
     setTimeout(()=>{
-      historicoCache = [];
+      historicoCache=[];
       localStorage.setItem('historicoCache','[]');
       renderChecklist();
       toast('✅ Novo ciclo iniciado!');
