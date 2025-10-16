@@ -8,8 +8,8 @@
 <style>
 :root{
   --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
-  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
-  --chip:#1e293b;--shadow:0 6px 18px rgba(0,0,0,.45);
+  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;
+  --shadow:0 6px 18px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
@@ -21,7 +21,7 @@ header{
   color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
   box-shadow:0 3px 10px rgba(0,0,0,.4);
 }
-.container{max-width:700px;margin:auto;padding:16px;flex:1;width:100%;}
+.container{max-width:700px;margin:auto;padding:16px;width:100%;flex:1;}
 .section{
   background:var(--card);border-radius:16px;padding:18px;
   box-shadow:var(--shadow);margin-bottom:18px;
@@ -31,8 +31,7 @@ header{
   display:flex;align-items:center;justify-content:space-between;
   margin:8px 0;transition:background .2s;
 }
-.item:hover{background:#26334e;}
-.done{text-decoration:line-through;color:var(--success);}
+.done{color:var(--success);text-decoration:line-through;}
 .btn{
   padding:8px 16px;border:0;border-radius:8px;font-weight:600;
   background:var(--accent);color:#000;cursor:pointer;
@@ -41,16 +40,6 @@ header{
 .btn.small{padding:6px 10px;font-size:13px;width:90px;}
 .btn:hover{background:var(--accent2);transform:scale(1.03);}
 .btn.loading{opacity:.6;pointer-events:none;}
-.btn.loading::after{
-  content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;
-  border:3px solid rgba(0,0,0,.3);border-top:3px solid #000;border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.tag{
-  background:var(--chip);padding:6px 10px;border-radius:999px;
-  color:var(--muted);font-size:13px;text-align:center;display:inline-block;
-}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--accent);color:#000;padding:10px 20px;border-radius:999px;
@@ -62,10 +51,11 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 <body>
 
 <header>✅ Check-list Diário</header>
+
 <div class="container">
   <div class="section" style="text-align:center">
     <h3 id="empresaTitulo"></h3>
-    <p class="tag" id="statusCarregando">Carregando tarefas...</p>
+    <p id="carregando">Carregando tarefas...</p>
   </div>
 
   <div class="section" id="listaChecklist"></div>
@@ -84,60 +74,48 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 <div class="toast" id="toast"></div>
 
 <script>
-/* === CONFIGURAÇÃO === */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwTBln1ES6yUL2a8u0Cnw9ZCZ2v-J7DNfiDSF1dePEELt6aW8WXYzEDIAzjrIVRp-59/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxcaEc7BTJf_rAxgocJnju4I8ujMrzJqLYgoY1UhLkOunhYM_bIk2ofzQF5GXliw31/exec';
 const $ = s => document.querySelector(s);
 
-/* === VARIÁVEIS === */
 let empresaAtual = localStorage.getItem('empresa') || 'MERCATTO DELÍCIA';
 let gerenteAtual = localStorage.getItem('gerente') || 'Gerente';
 let checklist = [];
 
-/* === INICIALIZAÇÃO === */
 window.onload = () => {
   $('#empresaTitulo').textContent = `Empresa: ${empresaAtual}`;
   carregarChecklist();
 };
 
-/* === CARREGAR TAREFAS === */
+/* === CARREGAR === */
 async function carregarChecklist(){
-  $('#statusCarregando').style.display = 'inline-block';
   try{
     const res = await fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`);
     const data = await res.json();
-    checklist = Array.isArray(data) ? data : [];
+    checklist = data || [];
     renderChecklist();
-  }catch(err){
-    console.error(err);
-    $('#listaChecklist').innerHTML = '<p class="tag">⚠️ Erro ao carregar tarefas.</p>';
-  }finally{
-    $('#statusCarregando').style.display = 'none';
+  }catch{
+    $('#listaChecklist').innerHTML = '<p>⚠️ Erro ao carregar tarefas.</p>';
   }
 }
 
-/* === RENDERIZAR CHECKLIST === */
+/* === RENDER === */
 function renderChecklist(){
   const box = $('#listaChecklist');
-  if(!checklist.length){
-    box.innerHTML = '<p class="tag">Nenhuma tarefa cadastrada para esta empresa.</p>';
-    return;
-  }
-  box.innerHTML = checklist.map(t=>{
-    const done = t.status==='Concluído';
-    return `
-      <div class="item">
-        <div class="txt ${done?'done':''}">${t.tarefa}</div>
-        <button class="btn small ${done?'done-btn':''}" style="${done?'background:var(--success);color:#fff':''}"
-          ${done?'disabled':''} onclick="marcarFeito(this,'${t.tarefa}')">
-          ${done?'✔ Feito':'Fazer'}
-        </button>
-      </div>`;
-  }).join('');
+  if(!checklist.length){box.innerHTML='<p>Nenhuma tarefa encontrada.</p>';return;}
+  box.innerHTML = checklist.map(t=>`
+    <div class="item">
+      <div>${t.tarefa}</div>
+      <button class="btn small" onclick="marcarFeito(this,'${t.tarefa}')">Fazer</button>
+    </div>`).join('');
 }
 
-/* === MARCAR COMO FEITO === */
+/* === MARCAR FEITO === */
 async function marcarFeito(btn,tarefa){
-  btn.classList.add('loading');
+  btn.style.background='var(--success)';
+  btn.style.color='#fff';
+  btn.textContent='✔ Feito';
+  btn.disabled=true;
+
   try{
     await fetch(GAS_URL,{
       method:'POST',
@@ -149,24 +127,17 @@ async function marcarFeito(btn,tarefa){
         status:'Feito'
       })
     });
-    btn.classList.remove('loading');
-    btn.textContent='✔ Feito';
-    btn.style.background='var(--success)';
-    btn.style.color='#fff';
-    btn.disabled=true;
-    btn.parentElement.querySelector('.txt').classList.add('done');
-    toast('✅ '+tarefa+' marcada como feita');
-  }catch(err){
-    console.error(err);
-    toast('⚠️ Erro ao registrar tarefa!');
-    btn.classList.remove('loading');
+    toast('✅ '+tarefa+' registrada no histórico');
+  }catch{
+    toast('⚠️ Erro ao registrar no histórico');
   }
 }
 
-/* === CONCLUIR CHECKLIST === */
+/* === FINALIZAR === */
 async function concluirChecklist(){
   const btn = event.target;
-  btn.classList.add('loading');
+  btn.disabled = true;
+  btn.textContent = 'Processando...';
   try{
     await fetch(GAS_URL,{
       method:'POST',
@@ -176,26 +147,21 @@ async function concluirChecklist(){
         gerente:gerenteAtual
       })
     });
-    btn.classList.remove('loading');
-    toast('🎯 Checklist finalizado e reiniciado!');
-    carregarChecklist();
-  }catch(err){
-    console.error(err);
-    toast('⚠️ Erro ao concluir checklist!');
-    btn.classList.remove('loading');
+    toast('🎯 Checklist finalizado!');
+    setTimeout(()=>window.location.reload(),1200);
+  }catch{
+    toast('⚠️ Erro ao finalizar');
   }
 }
 
 /* === VOLTAR === */
-function voltar(){
-  window.location.href = 'index.html';
-}
+function voltar(){window.location.href='index.html';}
 
 /* === TOAST === */
 function toast(msg){
-  const el = $('#toast');
-  el.textContent = msg;
-  el.style.display = 'block';
+  const el=$('#toast');
+  el.textContent=msg;
+  el.style.display='block';
   setTimeout(()=>el.style.display='none',2500);
 }
 </script>
