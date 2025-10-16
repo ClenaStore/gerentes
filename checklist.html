@@ -8,8 +8,8 @@
 <style>
 :root{
   --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
-  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
-  --shadow:0 4px 10px rgba(0,0,0,.4);
+  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;
+  --error:#ef4444;--shadow:0 4px 10px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
@@ -38,68 +38,53 @@ header{
   background:var(--accent);color:#000;cursor:pointer;
   transition:.2s;font-size:13px;padding:6px 12px;min-width:90px;
 }
-.btn:hover{background:var(--accent2);}
 .btn.small{font-size:13px;}
 .btn.done{background:var(--success)!important;color:#fff!important;}
+.btn:hover{background:var(--accent2);}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--accent);color:#000;padding:10px 18px;border-radius:999px;
   font-weight:600;box-shadow:var(--shadow);display:none;z-index:9999;
 }
-footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 .overlay{
-  position:fixed;inset:0;background:#000d;
-  color:#fff;display:flex;align-items:center;justify-content:center;
+  position:fixed;inset:0;background:#000d;color:#fff;
+  display:flex;align-items:center;justify-content:center;
   font-weight:600;font-size:18px;z-index:9999;
 }
-/* POPUP GENÉRICO */
+footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 .popup-bg{
   position:fixed;inset:0;background:rgba(0,0,0,.7);
   display:flex;align-items:center;justify-content:center;
   z-index:10000;backdrop-filter:blur(2px);
 }
 .popup{
-  background:#1e293b;border-radius:12px;padding:20px;max-width:420px;
-  width:90%;box-shadow:0 4px 18px rgba(0,0,0,.6);
+  background:#1e293b;border-radius:12px;padding:20px;
+  max-width:420px;width:90%;box-shadow:0 4px 18px rgba(0,0,0,.6);
   color:#fff;font-family:Inter,sans-serif;
 }
-.popup h3{margin:0 0 10px;font-size:16px;color:#ffb347;text-align:center;}
-.popup ul{margin:0;padding:0;list-style:none;max-height:320px;overflow-y:auto;}
-.popup li{
-  background:#2b3b55;padding:8px 10px;margin:6px 0;border-radius:8px;
-  font-size:13px;line-height:1.4;
+.popup h3{text-align:center;margin:0 0 10px;color:#ffb347}
+.popup textarea{
+  width:100%;min-height:70px;margin-top:10px;border-radius:8px;
+  border:1px solid #334155;background:#0f172a;color:#fff;padding:8px;
+  resize:none;font-size:13px;
 }
-.popup li span{display:block;color:#94a3b8;font-size:12px;}
 .popup button{
   background:#ff8f1f;border:0;border-radius:8px;color:#000;
   font-weight:600;padding:8px 14px;width:100%;margin-top:10px;
   cursor:pointer;
 }
-.popup textarea{
-  width:100%;min-height:70px;margin-top:10px;border-radius:8px;
-  border:1px solid #334155;background:#0f172a;color:#fff;padding:8px;
-  resize:none;font-family:Inter,sans-serif;font-size:13px;
-}
-@media(max-width:480px){
-  header{font-size:16px;padding:12px;}
-  .btn{font-size:13px;padding:8px 12px;}
-  .item{flex-direction:column;align-items:flex-start;gap:6px;}
-  .btn{align-self:flex-end;}
-}
 </style>
 </head>
 <body>
-
 <header>✅ Check-list Diário</header>
 
-<div class="overlay" id="overlay">Carregando tarefas...</div>
+<div class="overlay" id="overlay">Carregando...</div>
 
 <div class="container">
   <div class="section" style="text-align:center">
     <h3 id="empresaTitulo"></h3>
     <p id="usuarioInfo" style="color:var(--muted);font-size:14px"></p>
   </div>
-
   <div class="section" id="listaChecklist"></div>
 
   <div style="text-align:center;margin-top:20px">
@@ -109,65 +94,52 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   <div style="text-align:center;margin-top:20px">
     <button class="btn" style="background:#334155;color:#fff" onclick="voltar()">⬅ Voltar</button>
   </div>
-
   <footer>©2025 Grupo Delícia & Mercatto</footer>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-const GAS_URL='https://script.google.com/macros/s/AKfycbw7L7EltP8gOCvTNhqOhmecicOohbZmznHYZXSzCFplW3GU096isvFu_nsfNl-fawoA/exec';
+const GAS_URL='https://script.google.com/macros/s/AKfycbzNt5cyRmASTeyCC_3P9fFbvA4MlVq4nx7XZKPFvM2LXbtfd7s5jXWHTQupuAElGQo6/exec';
 const $=s=>document.querySelector(s);
 
-let empresaAtual = localStorage.getItem('empresa') || 'MERCATTO DELÍCIA';
-let gerenteAtual = localStorage.getItem('gerente') || 'Gerente';
+let empresaAtual=localStorage.getItem('empresa')||'MERCATTO DELÍCIA';
+let gerenteAtual=localStorage.getItem('gerente')||'Gerente';
 $('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
 $('#usuarioInfo').textContent=`Gerente: ${gerenteAtual}`;
 
-let checklistCache = [];
-let historicoFiltrado = [];
-let pollTimer=null;
+let checklistCache=[],historicoFiltrado=[];
+let loadedOnce=false;
 
-function fmt(d){
-  const dt=new Date(d);
-  return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-}
+/* ==== INÍCIO ==== */
+(async()=>{await carregarChecklist(true);setInterval(()=>carregarChecklist(false),60000);})();
 
-/* ======= Inicialização ======= */
-(async()=>{ await carregarChecklist(true); startPolling(); })();
+function fmt(d){const t=new Date(d);return `${t.toLocaleDateString('pt-BR')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;}
 
-/* ======= Atualização automática ======= */
-function startPolling(){
-  clearInterval(pollTimer);
-  pollTimer=setInterval(()=>carregarChecklist(false),60000);
-}
-
-/* ======= Carregar dados ======= */
+/* ==== CARREGAR ==== */
 async function carregarChecklist(showOverlay){
-  if(showOverlay){$('#overlay').style.display='flex';}
+  if(showOverlay && !loadedOnce)$('#overlay').style.display='flex';
   try{
-    const [resC,resH] = await Promise.all([
-      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`),
-      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`)
+    const [res1,res2]=await Promise.all([
+      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json()),
+      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json())
     ]);
-    const checklist = await resC.json();
-    const hist = await resH.json();
-    const histEmp = hist.filter(h=>h.empresa===empresaAtual);
+    checklistCache=res1||[];
+    const histEmp=(res2||[]).filter(h=>h.empresa===empresaAtual);
     const idx=histEmp.map(h=>h.tarefa).lastIndexOf('--- FIM DO CHECKLIST ---');
-    historicoFiltrado = idx>=0?histEmp.slice(idx+1):histEmp;
-    checklistCache = checklist||[];
+    historicoFiltrado=idx>=0?histEmp.slice(idx+1):histEmp;
     renderChecklist();
+    loadedOnce=true;
   }catch{toast('⚠️ Erro ao carregar dados.');}
   finally{$('#overlay').style.display='none';}
 }
 
-/* ======= Render ======= */
+/* ==== RENDER ==== */
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
-  const feitos = new Set(historicoFiltrado.filter(h=>String(h.status).toLowerCase().includes('feito')).map(h=>h.tarefa));
-  box.innerHTML = checklistCache.map(t=>{
-    const done = feitos.has(t.tarefa);
+  const feitos=new Set(historicoFiltrado.filter(h=>String(h.status).toLowerCase().includes('feito')).map(h=>h.tarefa));
+  box.innerHTML=checklistCache.map(t=>{
+    const done=feitos.has(t.tarefa);
     return `<div class="item">
       <div class="${done?'done':''}">${t.tarefa}</div>
       <button class="btn small ${done?'done':''}" onclick="${done?'mostrarHistorico(\''+t.tarefa+'\')':'marcarFeito(this,\''+t.tarefa+'\')'}">
@@ -177,75 +149,81 @@ function renderChecklist(){
   }).join('');
 }
 
-/* ======= Marcar Feito ======= */
+/* ==== MARCAR FEITO ==== */
 async function marcarFeito(btn,tarefa){
   btn.textContent='CONCLUÍDA';btn.classList.add('done');btn.disabled=true;
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
       action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'
     })});
-    toast('✅ Concluída');
-    await carregarChecklist(false);
+    toast('✅ '+tarefa+' feita');
+    setTimeout(()=>carregarChecklist(false),500);
   }catch{toast('⚠️ Erro ao registrar tarefa.');}
 }
 
-/* ======= Mostrar histórico ======= */
+/* ==== HISTÓRICO ==== */
 async function mostrarHistorico(tarefa){
   $('#overlay').textContent='Carregando histórico...';$('#overlay').style.display='flex';
   try{
     const res=await fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`);
     const registros=await res.json();$('#overlay').style.display='none';
-    const hist=registros.filter(h=>h.tarefa===tarefa && h.empresa===empresaAtual);
-    if(!hist.length){toast('Sem registros.');return;}
+    const hist=(registros||[]).filter(h=>h.tarefa===tarefa&&h.empresa===empresaAtual);
+    if(!hist.length)return toast('Sem registros.');
     const html=hist.map(h=>`<li><strong>${h.gerente}</strong> • ${h.status}<span>${h.empresa} • ${fmt(h.data)}</span></li>`).join('');
-    const pop=document.createElement('div');
-    pop.className='popup-bg';
-    pop.innerHTML=`<div class="popup"><h3>📋 Histórico – ${tarefa}</h3><ul>${html}</ul><button onclick="this.closest('.popup-bg').remove()">Fechar</button></div>`;
-    document.body.appendChild(pop);
+    const p=document.createElement('div');
+    p.className='popup-bg';
+    p.innerHTML=`<div class="popup"><h3>📋 Histórico – ${tarefa}</h3><ul>${html}</ul><button onclick="this.closest('.popup-bg').remove()">Fechar</button></div>`;
+    document.body.appendChild(p);
   }catch{$('#overlay').style.display='none';toast('Erro ao carregar histórico.');}
 }
 
-/* ======= Resumo antes de concluir ======= */
+/* ==== CONCLUSÃO ==== */
 function abrirResumo(){
   const total=checklistCache.length;
   const feitos=new Set(historicoFiltrado.filter(h=>String(h.status).toLowerCase().includes('feito')).map(h=>h.tarefa));
   const concluidas=feitos.size;
   const faltam=total-concluidas;
-  const pop=document.createElement('div');
-  pop.className='popup-bg';
-  pop.innerHTML=`
+  const p=document.createElement('div');
+  p.className='popup-bg';
+  p.innerHTML=`
     <div class="popup">
-      <h3>📊 Resumo do Dia</h3>
+      <h3>📊 Resumo</h3>
       <ul>
-        <li><strong>Total de tarefas:</strong> ${total}</li>
-        <li><strong>Concluídas:</strong> ${concluidas}</li>
-        <li><strong>Faltando:</strong> ${faltam}</li>
+        <li><b>Total:</b> ${total}</li>
+        <li><b>Concluídas:</b> ${concluidas}</li>
+        <li><b>Faltando:</b> ${faltam}</li>
       </ul>
-      <textarea id="justificativa" placeholder="Justificativa (opcional, se faltaram tarefas)"></textarea>
-      <button onclick="confirmarConclusao(this)">Confirmar Conclusão</button>
-      <button style="background:#334155;color:#fff" onclick="this.closest('.popup-bg').remove()">Cancelar</button>
+      <textarea id="justificativa" placeholder="Justificativa (obrigatória se houver pendências)"></textarea>
+      <button onclick="confirmarConclusao(this,${concluidas},${faltam})">Confirmar Conclusão</button>
+      <button style='background:#334155;color:#fff' onclick="this.closest('.popup-bg').remove()">Cancelar</button>
     </div>`;
-  document.body.appendChild(pop);
+  document.body.appendChild(p);
 }
 
-/* ======= Confirmar Conclusão ======= */
-async function confirmarConclusao(btn){
-  const justificativa=document.getElementById('justificativa').value.trim();
+/* ==== CONFIRMAR ==== */
+async function confirmarConclusao(btn,concluidas,faltam){
+  const j=document.getElementById('justificativa').value.trim();
+  if(faltam>0 && !j){toast('Justifique as pendências.');return;}
   btn.disabled=true;btn.textContent='Processando...';
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
-      action:'finalizarChecklist',empresa:empresaAtual,gerente:gerenteAtual,justificativa
+      action:'finalizarChecklist',
+      empresa:empresaAtual,
+      gerente:gerenteAtual,
+      justificativa:j,
+      concluidas:concluidas,
+      pendentes:faltam
     })});
-    toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
+    toast('🎯 Checklist finalizado.');
     btn.closest('.popup-bg').remove();
-    await carregarChecklist(true);
+    setTimeout(()=>carregarChecklist(true),600);
   }catch{
-    toast('⚠️ Erro ao finalizar.');
+    toast('Erro ao finalizar.');
     btn.disabled=false;btn.textContent='Confirmar Conclusão';
   }
 }
 
-/* ======= Diversos ======= */
+/* ==== UTIL ==== */
 function voltar(){window.location.href='index.html';}
 function toast(msg){
   const el=$('#toast');el.textContent=msg;el.style.display='block';
