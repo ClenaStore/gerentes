@@ -52,19 +52,19 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   color:#fff;display:flex;align-items:center;justify-content:center;
   font-weight:600;font-size:18px;z-index:9999;
 }
-/* ==== POPUP HISTÓRICO ==== */
+/* POPUP GENÉRICO */
 .popup-bg{
   position:fixed;inset:0;background:rgba(0,0,0,.7);
   display:flex;align-items:center;justify-content:center;
   z-index:10000;backdrop-filter:blur(2px);
 }
 .popup{
-  background:#1e293b;border-radius:12px;padding:20px;max-width:380px;
+  background:#1e293b;border-radius:12px;padding:20px;max-width:420px;
   width:90%;box-shadow:0 4px 18px rgba(0,0,0,.6);
   color:#fff;font-family:Inter,sans-serif;
 }
 .popup h3{margin:0 0 10px;font-size:16px;color:#ffb347;text-align:center;}
-.popup ul{margin:0;padding:0;list-style:none;max-height:300px;overflow-y:auto;}
+.popup ul{margin:0;padding:0;list-style:none;max-height:320px;overflow-y:auto;}
 .popup li{
   background:#2b3b55;padding:8px 10px;margin:6px 0;border-radius:8px;
   font-size:13px;line-height:1.4;
@@ -74,6 +74,11 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   background:#ff8f1f;border:0;border-radius:8px;color:#000;
   font-weight:600;padding:8px 14px;width:100%;margin-top:10px;
   cursor:pointer;
+}
+.popup textarea{
+  width:100%;min-height:70px;margin-top:10px;border-radius:8px;
+  border:1px solid #334155;background:#0f172a;color:#fff;padding:8px;
+  resize:none;font-family:Inter,sans-serif;font-size:13px;
 }
 @media(max-width:480px){
   header{font-size:16px;padding:12px;}
@@ -98,7 +103,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   <div class="section" id="listaChecklist"></div>
 
   <div style="text-align:center;margin-top:20px">
-    <button class="btn" id="btnConcluir" onclick="concluirChecklist()">✅ Concluir Check-list</button>
+    <button class="btn" id="btnConcluir" onclick="abrirResumo()">✅ Concluir Check-list</button>
   </div>
 
   <div style="text-align:center;margin-top:20px">
@@ -120,142 +125,131 @@ $('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
 $('#usuarioInfo').textContent=`Gerente: ${gerenteAtual}`;
 
 let checklistCache = [];
-let historicoCache = [];
+let historicoFiltrado = [];
+let pollTimer=null;
 
-/* ==== INICIALIZAÇÃO ==== */
-(async()=>{
-  await carregarChecklist();
-  $('#overlay').style.display='none';
-})();
-
-/* ==== CARREGAR CHECKLIST ==== */
-async function carregarChecklist(){
-  $('#overlay').style.display='flex';
-  $('#overlay').textContent='Carregando tarefas...';
-  try{
-    const [resCheck,resHist] = await Promise.all([
-      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json()),
-      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`).then(r=>r.json())
-    ]);
-    checklistCache=resCheck||[];
-    historicoCache=resHist||[];
-
-    // filtrar histórico apenas após o último fechamento
-    const indexUltimoFechamento = historicoCache.map(h=>h.tarefa).lastIndexOf('--- FIM DO CHECKLIST ---');
-    const historicoAtual = indexUltimoFechamento>=0 ? historicoCache.slice(indexUltimoFechamento+1) : historicoCache;
-
-    renderChecklist(historicoAtual);
-  }catch(e){
-    toast('⚠️ Erro ao carregar dados.');
-  }finally{
-    $('#overlay').style.display='none';
-  }
+function fmt(d){
+  const dt=new Date(d);
+  return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 }
 
-/* ==== RENDERIZAÇÃO ==== */
-function renderChecklist(histAtual){
+/* ======= Inicialização ======= */
+(async()=>{ await carregarChecklist(true); startPolling(); })();
+
+/* ======= Atualização automática ======= */
+function startPolling(){
+  clearInterval(pollTimer);
+  pollTimer=setInterval(()=>carregarChecklist(false),60000);
+}
+
+/* ======= Carregar dados ======= */
+async function carregarChecklist(showOverlay){
+  if(showOverlay){$('#overlay').style.display='flex';}
+  try{
+    const [resC,resH] = await Promise.all([
+      fetch(`${GAS_URL}?action=checklist&empresa=${encodeURIComponent(empresaAtual)}`),
+      fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`)
+    ]);
+    const checklist = await resC.json();
+    const hist = await resH.json();
+    const histEmp = hist.filter(h=>h.empresa===empresaAtual);
+    const idx=histEmp.map(h=>h.tarefa).lastIndexOf('--- FIM DO CHECKLIST ---');
+    historicoFiltrado = idx>=0?histEmp.slice(idx+1):histEmp;
+    checklistCache = checklist||[];
+    renderChecklist();
+  }catch{toast('⚠️ Erro ao carregar dados.');}
+  finally{$('#overlay').style.display='none';}
+}
+
+/* ======= Render ======= */
+function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklistCache.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
-
-  const histFeitos = new Set(histAtual.filter(h=>h.status && h.status.toLowerCase().includes('feito')).map(h=>h.tarefa));
-  const html=checklistCache.map(t=>{
-    const feita=histFeitos.has(t.tarefa);
-    return `
-      <div class="item">
-        <div class="${feita?'done':''}">${t.tarefa}</div>
-        <button class="btn small ${feita?'done':''}"
-          onclick="${feita?'mostrarHistorico(\''+t.tarefa+'\')':'marcarFeito(this,\''+t.tarefa+'\')'}">
-          ${feita?'CONCLUÍDA':'Fazer'}
-        </button>
-      </div>`;
+  const feitos = new Set(historicoFiltrado.filter(h=>String(h.status).toLowerCase().includes('feito')).map(h=>h.tarefa));
+  box.innerHTML = checklistCache.map(t=>{
+    const done = feitos.has(t.tarefa);
+    return `<div class="item">
+      <div class="${done?'done':''}">${t.tarefa}</div>
+      <button class="btn small ${done?'done':''}" onclick="${done?'mostrarHistorico(\''+t.tarefa+'\')':'marcarFeito(this,\''+t.tarefa+'\')'}">
+        ${done?'CONCLUÍDA':'Fazer'}
+      </button>
+    </div>`;
   }).join('');
-  box.innerHTML=html;
 }
 
-/* ==== MARCAR FEITO ==== */
+/* ======= Marcar Feito ======= */
 async function marcarFeito(btn,tarefa){
-  btn.textContent='CONCLUÍDA';
-  btn.classList.add('done');
-  btn.disabled=true;
+  btn.textContent='CONCLUÍDA';btn.classList.add('done');btn.disabled=true;
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
-      action:'registrarHistorico',
-      empresa:empresaAtual,
-      gerente:gerenteAtual,
-      tarefa,
-      status:'Feito'
+      action:'registrarHistorico',empresa:empresaAtual,gerente:gerenteAtual,tarefa,status:'Feito'
     })});
-    toast(`✅ ${tarefa} concluída.`);
-  }catch{
-    toast('⚠️ Erro ao registrar tarefa.');
-  }
+    toast('✅ Concluída');
+    await carregarChecklist(false);
+  }catch{toast('⚠️ Erro ao registrar tarefa.');}
 }
 
-/* ==== MOSTRAR HISTÓRICO ==== */
+/* ======= Mostrar histórico ======= */
 async function mostrarHistorico(tarefa){
-  const overlay=$('#overlay');
-  overlay.textContent='Carregando histórico...';
-  overlay.style.display='flex';
+  $('#overlay').textContent='Carregando histórico...';$('#overlay').style.display='flex';
   try{
     const res=await fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`);
-    const registros=await res.json();
-    overlay.style.display='none';
-
+    const registros=await res.json();$('#overlay').style.display='none';
     const hist=registros.filter(h=>h.tarefa===tarefa && h.empresa===empresaAtual);
-    if(!hist.length)return toast('Sem registros anteriores.');
-
-    const htmlItens=hist.map(h=>{
-      const dataObj=new Date(h.data);
-      const dataFormatada=`${String(dataObj.getDate()).padStart(2,'0')}/${String(dataObj.getMonth()+1).padStart(2,'0')}/${dataObj.getFullYear()} ${String(dataObj.getHours()).padStart(2,'0')}:${String(dataObj.getMinutes()).padStart(2,'0')}`;
-      return `<li>
-        <strong>${h.gerente||'—'}</strong> • ${h.status}
-        <span>${h.empresa||''} • ${dataFormatada}</span>
-      </li>`;
-    }).join('');
-
-    const popup=document.createElement('div');
-    popup.className='popup-bg';
-    popup.innerHTML=`
-      <div class="popup">
-        <h3>📋 Histórico - ${tarefa}</h3>
-        <ul>${htmlItens}</ul>
-        <button onclick="this.closest('.popup-bg').remove()">Fechar</button>
-      </div>`;
-    document.body.appendChild(popup);
-  }catch(e){
-    overlay.style.display='none';
-    toast('⚠️ Erro ao carregar histórico.');
-  }
+    if(!hist.length){toast('Sem registros.');return;}
+    const html=hist.map(h=>`<li><strong>${h.gerente}</strong> • ${h.status}<span>${h.empresa} • ${fmt(h.data)}</span></li>`).join('');
+    const pop=document.createElement('div');
+    pop.className='popup-bg';
+    pop.innerHTML=`<div class="popup"><h3>📋 Histórico – ${tarefa}</h3><ul>${html}</ul><button onclick="this.closest('.popup-bg').remove()">Fechar</button></div>`;
+    document.body.appendChild(pop);
+  }catch{$('#overlay').style.display='none';toast('Erro ao carregar histórico.');}
 }
 
-/* ==== FINALIZAR ==== */
-async function concluirChecklist(){
-  const btn=$('#btnConcluir');
-  btn.disabled=true; btn.textContent='Processando...';
+/* ======= Resumo antes de concluir ======= */
+function abrirResumo(){
+  const total=checklistCache.length;
+  const feitos=new Set(historicoFiltrado.filter(h=>String(h.status).toLowerCase().includes('feito')).map(h=>h.tarefa));
+  const concluidas=feitos.size;
+  const faltam=total-concluidas;
+  const pop=document.createElement('div');
+  pop.className='popup-bg';
+  pop.innerHTML=`
+    <div class="popup">
+      <h3>📊 Resumo do Dia</h3>
+      <ul>
+        <li><strong>Total de tarefas:</strong> ${total}</li>
+        <li><strong>Concluídas:</strong> ${concluidas}</li>
+        <li><strong>Faltando:</strong> ${faltam}</li>
+      </ul>
+      <textarea id="justificativa" placeholder="Justificativa (opcional, se faltaram tarefas)"></textarea>
+      <button onclick="confirmarConclusao(this)">Confirmar Conclusão</button>
+      <button style="background:#334155;color:#fff" onclick="this.closest('.popup-bg').remove()">Cancelar</button>
+    </div>`;
+  document.body.appendChild(pop);
+}
+
+/* ======= Confirmar Conclusão ======= */
+async function confirmarConclusao(btn){
+  const justificativa=document.getElementById('justificativa').value.trim();
+  btn.disabled=true;btn.textContent='Processando...';
   try{
     await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
-      action:'finalizarChecklist',
-      empresa:empresaAtual,
-      gerente:gerenteAtual
+      action:'finalizarChecklist',empresa:empresaAtual,gerente:gerenteAtual,justificativa
     })});
     toast(`🎯 Checklist finalizado por ${gerenteAtual}`);
-    setTimeout(()=>carregarChecklist(),1000);
+    btn.closest('.popup-bg').remove();
+    await carregarChecklist(true);
   }catch{
-    toast('⚠️ Erro ao finalizar checklist');
-    btn.disabled=false; btn.textContent='✅ Concluir Check-list';
+    toast('⚠️ Erro ao finalizar.');
+    btn.disabled=false;btn.textContent='Confirmar Conclusão';
   }
 }
 
-/* ==== VOLTAR ==== */
+/* ======= Diversos ======= */
 function voltar(){window.location.href='index.html';}
-
-/* ==== TOAST ==== */
 function toast(msg){
-  const el=$('#toast');
-  el.textContent=msg;
-  el.style.display='block';
-  clearTimeout(el.timeout);
-  el.timeout=setTimeout(()=>el.style.display='none',2000);
+  const el=$('#toast');el.textContent=msg;el.style.display='block';
+  clearTimeout(el.timeout);el.timeout=setTimeout(()=>el.style.display='none',2000);
 }
 </script>
 </body>
