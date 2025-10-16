@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
-  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;
+  --text:#f8fafc;--muted:#94a3b8;--success:#22c55e;--error:#ef4444;
   --shadow:0 4px 10px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -21,29 +21,26 @@ header{
   color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
   box-shadow:0 3px 8px rgba(0,0,0,.4);
 }
-.container{max-width:600px;margin:auto;padding:16px;width:100%;flex:1;}
+.container{max-width:650px;margin:auto;padding:16px;width:100%;flex:1;}
 .section{
-  background:var(--card);border-radius:16px;padding:16px;
+  background:var(--card);border-radius:16px;padding:18px;
   box-shadow:var(--shadow);margin-bottom:18px;
 }
 .item{
-  background:#1e293b;border-radius:10px;padding:12px;
+  background:#1e293b;border-radius:10px;padding:10px 14px;
   display:flex;align-items:center;justify-content:space-between;
-  margin:8px 0;transition:background .15s;
-  font-size:15px;
+  margin:6px 0;transition:background .15s;
 }
 .item:hover{background:#25334e;}
 .done{color:var(--success);}
 .btn{
   border:0;border-radius:8px;font-weight:600;
   background:var(--accent);color:#000;cursor:pointer;
-  transition:.2s;font-size:14px;padding:10px 14px;
-  box-shadow:var(--shadow);min-width:110px;
+  transition:.2s;font-size:13px;padding:6px 12px;min-width:90px;
 }
-.btn.small{font-size:13px;padding:8px 10px;}
-.btn.done{
-  background:var(--success)!important;color:#fff!important;
-}
+.btn:hover{background:var(--accent2);}
+.btn.small{font-size:13px;}
+.btn.done{background:var(--success)!important;color:#fff!important;}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--accent);color:#000;padding:10px 18px;border-radius:999px;
@@ -55,10 +52,33 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   color:#fff;display:flex;align-items:center;justify-content:center;
   font-weight:600;font-size:18px;z-index:9999;
 }
+/* ==== POPUP HISTÓRICO ==== */
+.popup-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:10000;backdrop-filter:blur(2px);
+}
+.popup{
+  background:#1e293b;border-radius:12px;padding:20px;max-width:380px;
+  width:90%;box-shadow:0 4px 18px rgba(0,0,0,.6);
+  color:#fff;font-family:Inter,sans-serif;
+}
+.popup h3{margin:0 0 10px;font-size:16px;color:#ffb347;text-align:center;}
+.popup ul{margin:0;padding:0;list-style:none;max-height:300px;overflow-y:auto;}
+.popup li{
+  background:#2b3b55;padding:8px 10px;margin:6px 0;border-radius:8px;
+  font-size:13px;line-height:1.4;
+}
+.popup li span{display:block;color:#94a3b8;font-size:12px;}
+.popup button{
+  background:#ff8f1f;border:0;border-radius:8px;color:#000;
+  font-weight:600;padding:8px 14px;width:100%;margin-top:10px;
+  cursor:pointer;
+}
 @media(max-width:480px){
   header{font-size:16px;padding:12px;}
-  .btn{font-size:13px;padding:9px 12px;}
-  .item{font-size:14px;flex-direction:column;align-items:flex-start;gap:6px;}
+  .btn{font-size:13px;padding:8px 12px;}
+  .item{flex-direction:column;align-items:flex-start;gap:6px;}
   .btn{align-self:flex-end;}
 }
 </style>
@@ -170,7 +190,7 @@ async function marcarFeito(btn,tarefa){
   }catch{}
 }
 
-/* ==== MOSTRAR HISTÓRICO (REAL DA PLANILHA) ==== */
+/* ==== MOSTRAR HISTÓRICO BONITO (FILTRO POR EMPRESA) ==== */
 async function mostrarHistorico(tarefa){
   const overlay=$('#overlay');
   overlay.textContent='Carregando histórico...';
@@ -179,13 +199,31 @@ async function mostrarHistorico(tarefa){
     const res=await fetch(`${GAS_URL}?action=historico&empresa=${encodeURIComponent(empresaAtual)}`);
     const registros=await res.json();
     overlay.style.display='none';
-    const hist=registros.filter(h=>h.tarefa===tarefa);
-    if(!hist.length)return alert('Sem registros anteriores para esta tarefa.');
-    const msg=hist.map(h=>`${h.data} • ${h.gerente||'—'} • ${h.status}`).join('\n');
-    alert(`📋 Histórico de "${tarefa}"\n\n${msg}`);
+
+    const hist=registros.filter(h=>h.tarefa===t.tarefa && h.empresa===empresaAtual);
+    if(!hist.length)return toast('Sem registros anteriores.');
+
+    const htmlItens=hist.map(h=>{
+      const dataObj=new Date(h.data);
+      const dataFormatada=`${String(dataObj.getDate()).padStart(2,'0')}/${String(dataObj.getMonth()+1).padStart(2,'0')}/${dataObj.getFullYear()} ${String(dataObj.getHours()).padStart(2,'0')}:${String(dataObj.getMinutes()).padStart(2,'0')}`;
+      return `<li>
+        <strong>${h.gerente||'—'}</strong> • ${h.status}
+        <span>${h.empresa||''} • ${dataFormatada}</span>
+      </li>`;
+    }).join('');
+
+    const popup=document.createElement('div');
+    popup.className='popup-bg';
+    popup.innerHTML=`
+      <div class="popup">
+        <h3>📋 Histórico - ${t.tarefa}</h3>
+        <ul>${htmlItens}</ul>
+        <button onclick="this.closest('.popup-bg').remove()">Fechar</button>
+      </div>`;
+    document.body.appendChild(popup);
   }catch(e){
     overlay.style.display='none';
-    alert('⚠️ Erro ao carregar histórico completo.');
+    toast('⚠️ Erro ao carregar histórico.');
   }
 }
 
@@ -203,6 +241,7 @@ async function concluirChecklist(){
       tarefa:'--- FIM DO CHECKLIST ---',
       status:'Finalizado',
       gerente:gerenteAtual,
+      empresa:empresaAtual,
       data:new Date().toLocaleString(),
       divisor:'Sim'
     });
