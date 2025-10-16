@@ -66,11 +66,13 @@ h2{margin-top:0;color:var(--accent2);font-weight:600;}
     <h2>Identificação</h2>
     <select id="usuarioSelect" class="select">
       <option value="">Selecione o gerente</option>
-      <option>USER_DELICIA_RUAN</option>
-      <option>USER_DELICIA_VALCIR</option>
-      <option>USER_MERCATTO_DHEURE</option>
-      <option>USER_MERCATTO_YURI</option>
-      <option>USER_MERCATTO_GLEIDSA</option>
+      <option>MERCATTO_DHEURE</option>
+      <option>MERCATTO_YURI</option>
+      <option>MERCATTO_GLEIDSA</option>
+      <option>MERCATTO_JAQUELINE</option>
+      <option>MERCATTO_IVANIO</option>
+      <option>DELICIA_RUAN</option>
+      <option>DELICIA_VALCIR</option>
     </select>
     <input id="senha" type="password" class="input" placeholder="Senha de acesso">
     <button class="btn" onclick="login()">Entrar</button>
@@ -116,19 +118,27 @@ async function login(){
   try{
     const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
     const data=await res.json();
-    if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';return;}
 
-    /* 🔹 Salva o usuário completo no formato USER_EMPRESA_GERENTE */
-    localStorage.setItem('usuario', usuario.toUpperCase());
+    if(!data.success){
+      msg.textContent=data.msg||'Usuário ou senha incorretos.';
+      return;
+    }
 
-    /* 🔹 Extrai empresa e nome do gerente */
-    const partes = usuario.split('_');
-    const empresa = partes[1] ? partes[1].toUpperCase() : 'GERÊNCIA';
-    const gerente = partes[2] ? partes[2].charAt(0).toUpperCase()+partes[2].slice(1).toLowerCase() : 'Gerente';
+    // 🔹 Extrai empresa e nome
+    const partes=usuario.split('_');
+    const empresa=partes[0].toUpperCase();
+    const gerente=partes[1] ? partes[1].charAt(0).toUpperCase()+partes[1].slice(1).toLowerCase() : 'Gerente';
 
-    /* 🔹 Define exibição */
-    const empresaNome = empresa==='MERCATTO' ? 'MERCATTO DELÍCIA' : 'DELÍCIA GOURMET';
-    $('#empresaNome').textContent = `${empresaNome} • ${gerente}`;
+    // 🔹 Nome de exibição da empresa
+    let empresaNomeDisplay = (empresa==='MERCATTO') ? 'MERCATTO DELÍCIA' : 'DELÍCIA GOURMET';
+    $('#empresaNome').textContent = `${empresaNomeDisplay} • ${gerente}`;
+
+    // 🔹 Salva login para os outros painéis
+    localStorage.setItem('empresa', empresaNomeDisplay);
+    localStorage.setItem('gerente', gerente);
+    localStorage.setItem('usuario', usuario);
+
+    // 🔹 Exibe home
     $('#loginBox').style.display='none';
     $('#homeBox').style.display='block';
     toast('👋 Bem-vindo, '+gerente+'!');
@@ -138,9 +148,7 @@ async function login(){
 }
 
 /* ABRIR PÁGINAS */
-function abrir(pagina){
-  window.location.href=pagina;
-}
+function abrir(pagina){window.location.href=pagina;}
 
 /* LOGOUT */
 function logout(){
@@ -148,7 +156,7 @@ function logout(){
   $('#loginBox').style.display='block';
   $('#senha').value='';
   $('#usuarioSelect').value='';
-  localStorage.removeItem('usuario');
+  localStorage.clear();
 }
 
 /* TOAST */
