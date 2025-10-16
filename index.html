@@ -26,12 +26,7 @@ header{position:sticky;top:0;z-index:20;background:var(--card);color:var(--accen
   min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}
 .card:active{transform:scale(.97)}
 .btn{width:100%;padding:12px;background:var(--accent);color:#000;border:0;border-radius:10px;font-weight:700;cursor:pointer;position:relative;overflow:hidden;transition:.3s}
-.btn.loading::after{
-  content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;
-  border:3px solid rgba(0,0,0,.3);border-top:3px solid #000;border-radius:50%;
-  animation:spin 1s linear infinite;background:none;
-}
-.btn.done{background:var(--success)!important;color:#fff}
+.btn.done{background:var(--success)!important;color:#fff!important;cursor:default}
 .input,.select,.textarea{width:100%;padding:12px;border-radius:10px;border:0;background:#334155;color:#fff;margin:6px 0 10px;font-size:14px}
 .item{background:#334155;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .done-text{color:var(--success);text-decoration:line-through}
@@ -153,12 +148,13 @@ const hideOverlay=()=>$('#overlay').classList.remove('visible');
 function normalizeNoAccent(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
 const cache={checklist:null,manutencoes:null};
 
+/* VIEW */
 const views=['login','home','checklist','manutencoes','desperdicios','relatorios','links'];
 function showView(v){
   views.forEach(x=>$('#view-'+x)?.classList.remove('active'));
   $('#view-'+v)?.classList.add('active');
-  if(v==='checklist')renderChecklist();
-  if(v==='manutencoes')renderManutencoes();
+  if(v==='checklist')loadChecklist();
+  if(v==='manutencoes')loadManutencoes();
   if(v==='relatorios')renderRelatorios();
 }
 
@@ -175,79 +171,98 @@ async function login(){
   if(!usuario||!senha){msg.textContent='Preencha todos os campos.';return;}
   msg.textContent='';showOverlay();
   try{
-    const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);const data=await res.json();
+    const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
+    const data=await res.json();
     if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';hideOverlay();return;}
     const empNorm=normalizeNoAccent(data.empresa);
-    localStorage.setItem('gerente_id',usuario);localStorage.setItem('gerente_senha',senha);
-    localStorage.setItem('empresa',empNorm);localStorage.setItem('empresaOriginal',data.empresa);
+    localStorage.setItem('gerente_id',usuario);
+    localStorage.setItem('gerente_senha',senha);
+    localStorage.setItem('empresa',empNorm);
+    localStorage.setItem('empresaOriginal',data.empresa);
     $('#empresaNome').textContent=data.empresa;
-    preloadData();hideOverlay();showView('home');
+    await preloadData();
+    hideOverlay();showView('home');
   }catch{msg.textContent='Erro de conexão.';hideOverlay();}
 }
 function logout(){localStorage.clear();showView('login');}
 
-/* carregamento paralelo */
+/* PRÉ CARREGAMENTO */
 async function preloadData(){
   const emp=localStorage.getItem('empresa');
-  Promise.allSettled([
-    fetch(`${GAS_URL}?action=checklist&empresa=${emp}`).then(r=>r.json()).then(d=>cache.checklist=d),
-    fetch(`${GAS_URL}?action=manutencoes&empresa=${emp}`).then(r=>r.json()).then(d=>cache.manutencoes=d)
+  showOverlay();
+  const [chk,man]=await Promise.allSettled([
+    fetch(`${GAS_URL}?action=checklist&empresa=${emp}`).then(r=>r.json()),
+    fetch(`${GAS_URL}?action=manutencoes&empresa=${emp}`).then(r=>r.json())
   ]);
+  cache.checklist=chk.value||[];
+  cache.manutencoes=man.value||[];
+  hideOverlay();
 }
 
-/* checklist */
+/* CHECKLIST */
+async function loadChecklist(){
+  showOverlay();
+  const emp=localStorage.getItem('empresa');
+  const res=await fetch(`${GAS_URL}?action=checklist&empresa=${emp}`);
+  cache.checklist=await res.json();
+  renderChecklist();
+  hideOverlay();
+}
 function renderChecklist(){
   const data=cache.checklist||[];
   const box=$('#listChecklist');box.innerHTML='';
   if(!data.length){box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>';return;}
   data.forEach(t=>{
     const el=document.createElement('div');el.className='item';
-    const btnText=t.status==='Concluído'?'✔ Feito':'Marcar';
-    const disabled=t.status==='Concluído'?'disabled':'';
     el.innerHTML=`<div class="txt ${t.status==='Concluído'?'done-text':''}">${t.tarefa}</div>
-      <button class="btn ${t.status==='Concluído'?'done':''}" ${disabled} onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${btnText}</button>`;
+      <button class="btn ${t.status==='Concluído'?'done':''}" ${t.status==='Concluído'?'disabled':''}
+        onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${t.status==='Concluído'?'✔ Feito':'Marcar'}</button>`;
     box.appendChild(el);
   });
 }
 async function marcarChecklist(btn,emp,linha){
-  btn.classList.add('loading');btn.disabled=true;
+  showOverlay();btn.disabled=true;
   try{
     await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${emp}&linha=${linha}`);
-    btn.classList.remove('loading');btn.classList.add('done');btn.textContent='✔ Feito';
+    btn.textContent='✔ Feito';btn.classList.add('done');btn.disabled=true;
     btn.parentElement.querySelector('.txt').classList.add('done-text');
-  }catch{
-    btn.classList.remove('loading');btn.disabled=false;
-  }
+  }finally{hideOverlay();}
 }
 
-/* manutenções */
+/* MANUTENÇÕES */
+async function loadManutencoes(){
+  showOverlay();
+  const emp=localStorage.getItem('empresa');
+  const res=await fetch(`${GAS_URL}?action=manutencoes&empresa=${emp}`);
+  cache.manutencoes=await res.json();
+  renderManutencoes();
+  hideOverlay();
+}
 function renderManutencoes(){
   const data=cache.manutencoes||[];
   const box=$('#listManutencoes');box.innerHTML='';
   if(!data.length){box.innerHTML='<p class="tag">Nenhuma manutenção cadastrada.</p>';return;}
   data.forEach(m=>{
     const el=document.createElement('div');el.className='item';
-    const btnText=m.status==='Feita'?'✔ Feita':'Concluir';
-    const disabled=m.status==='Feita'?'disabled':'';
     el.innerHTML=`<div class="txt ${m.status==='Feita'?'done-text':''}">${m.tarefa}</div>
-      <button class="btn ${m.status==='Feita'?'done':''}" ${disabled} onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${btnText}</button>`;
+      <button class="btn ${m.status==='Feita'?'done':''}" ${m.status==='Feita'?'disabled':''}
+        onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${m.status==='Feita'?'✔ Feita':'Concluir'}</button>`;
     box.appendChild(el);
   });
 }
 async function marcarManutencao(btn,emp,linha){
-  btn.classList.add('loading');btn.disabled=true;
+  showOverlay();btn.disabled=true;
   try{
     await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${emp}&linha=${linha}`);
-    btn.classList.remove('loading');btn.classList.add('done');btn.textContent='✔ Feita';
+    btn.textContent='✔ Feita';btn.classList.add('done');btn.disabled=true;
     btn.parentElement.querySelector('.txt').classList.add('done-text');
-  }catch{
-    btn.classList.remove('loading');btn.disabled=false;
-  }
+  }finally{hideOverlay();}
 }
 
-/* desperdício */
+/* DESPERDÍCIO */
 async function registrarLancamento(){
-  const empresa=localStorage.getItem('empresa'),cat=$('#categoria').value,desc=$('#descricao').value,qtd=$('#quantidade').value;
+  const empresa=localStorage.getItem('empresa'),
+        cat=$('#categoria').value,desc=$('#descricao').value,qtd=$('#quantidade').value;
   if(!cat||!desc||!qtd)return alert('Preencha todos os campos!');
   showOverlay();
   await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria:cat,descricao:desc,qtd})});
@@ -255,7 +270,7 @@ async function registrarLancamento(){
   $('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
 }
 
-/* relatórios */
+/* RELATÓRIOS */
 function renderRelatorios(){
   const c=(cache.checklist||[]).filter(x=>x.status==='Concluído');
   const m=(cache.manutencoes||[]).filter(x=>x.status==='Feita');
@@ -263,7 +278,7 @@ function renderRelatorios(){
   $('#relManutData').innerHTML=m.length?m.map(x=>`<div class='item'><div class='txt'>🔧 ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma manutenção finalizada.</p>';
 }
 
-/* envio manual de resumo */
+/* ENVIO MANUAL */
 async function enviarResumoAgora(){
   const empresa=localStorage.getItem('empresaOriginal')||localStorage.getItem('empresa');
   showOverlay();
