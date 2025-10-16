@@ -3,44 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Painel de Gerência - Delícia & Mercatto</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f1724">
+<title>🧭 Painel de Gerência - Delícia & Mercatto</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Symbols+Rounded" rel="stylesheet">
 <style>
 :root{
-  --bg:#0f1724;--card:#1e293b;--accent:#ff8f1f;--text:#fff;--muted:#9aa6b2;
-  --success:#16a34a;--error:#ef4444;--overlay:rgba(0,0,0,.6);--chip:#0b1220;
+  --bg:#0a0f1f;
+  --card:#151d2f;
+  --accent:#ff8f1f;
+  --accent2:#ffb347;
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --success:#22c55e;
+  --error:#ef4444;
+  --chip:#1e293b;
+  --shadow:0 6px 16px rgba(0,0,0,0.45);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;height:100%}
-header{position:sticky;top:0;z-index:20;background:var(--card);color:var(--accent);
-  padding:14px;text-align:center;font-size:18px;letter-spacing:.2px;
-  box-shadow:0 2px 12px rgba(0,0,0,.45)}
-.container{max-width:720px;margin:0 auto;padding:14px;height:calc(100dvh - 56px);overflow:auto}
-.grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
-@media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr)}}
-.card{background:var(--card);border-radius:14px;padding:16px;text-align:center;
-  box-shadow:0 8px 28px rgba(0,0,0,.28);transition:transform .15s ease;
-  min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}
-.card:active{transform:scale(.97)}
-.btn{width:100%;padding:12px;background:var(--accent);color:#000;border:0;border-radius:10px;font-weight:700;cursor:pointer;position:relative;overflow:hidden}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{
+  position:sticky;top:0;z-index:10;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  color:#000;text-align:center;padding:16px;font-weight:700;
+  letter-spacing:.3px;font-size:18px;box-shadow:0 3px 10px rgba(0,0,0,.4)
+}
+.container{max-width:680px;margin:0 auto;padding:16px}
+.view{display:none;animation:fade .4s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2,h3{color:var(--accent2);margin-top:0}
+.section{
+  background:var(--card);border-radius:16px;padding:18px;
+  box-shadow:var(--shadow);margin-bottom:16px
+}
+.select,.input,.textarea{
+  width:100%;padding:12px;border-radius:10px;border:0;
+  background:#1e293b;color:#fff;margin:8px 0;font-size:15px
+}
+.btn{
+  width:100%;padding:12px;border:0;border-radius:10px;
+  background:var(--accent);color:#000;font-weight:600;
+  box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;
+  transition:all .2s ease;position:relative
+}
+.btn:hover{background:var(--accent2);transform:scale(1.02)}
+.btn.loading{opacity:.6;pointer-events:none}
 .btn.loading::after{
   content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;
-  border:3px solid rgba(0,0,0,.2);border-top:3px solid #000;border-radius:50%;
-  animation:spin 1s linear infinite;background:none;
+  border:3px solid rgba(0,0,0,.3);border-top:3px solid #000;border-radius:50%;
+  animation:spin 1s linear infinite
 }
-.input,.select,.textarea{width:100%;padding:12px;border-radius:10px;border:0;background:#334155;color:#fff;margin:6px 0 10px;font-size:14px}
-.item{background:#334155;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.done{color:var(--success);text-decoration:line-through}
 @keyframes spin{to{transform:rotate(360deg)}}
-.view{display:none}.view.active{display:block}
-.topbar{position:sticky;top:0;background:var(--bg);padding:8px 0;margin:-14px -14px 8px -14px;border-bottom:1px solid rgba(255,255,255,.06)}
-.back{background:transparent;border:0;color:var(--accent);font-weight:700}
-.section{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 8px 28px rgba(0,0,0,.22);margin-bottom:12px}
-footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
-.tag{display:inline-block;background:var(--chip);color:var(--muted);padding:6px 10px;border-radius:999px;font-size:12px}
+.card{
+  background:var(--card);padding:20px;border-radius:14px;
+  text-align:center;box-shadow:var(--shadow);cursor:pointer;
+  transition:transform .2s ease,background .2s ease;
+}
+.card:hover{transform:translateY(-2px);background:#1c2540}
+.cardgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.item{
+  background:#1e293b;border-radius:10px;padding:10px 12px;
+  display:flex;justify-content:space-between;align-items:center;
+  margin:8px 0;transition:background .2s ease
+}
+.item:hover{background:#26334e}
+.done{text-decoration:line-through;color:var(--success)}
+.tag{background:var(--chip);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px}
+.backbar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.backbar button{background:none;border:0;color:var(--accent2);font-weight:600;cursor:pointer}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:14px 0}
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--accent);color:#000;padding:10px 20px;border-radius:999px;
+  font-weight:600;box-shadow:var(--shadow);display:none;animation:fade .3s ease
+}
 </style>
 </head>
 <body>
@@ -51,7 +86,7 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <section id="view-login" class="view active">
   <div class="container">
     <div class="section" style="text-align:center">
-      <h2 style="color:var(--accent)">Identificação</h2>
+      <h2>Identificação</h2>
       <label>Gerente</label>
       <select id="usuarioSelect" class="select"><option value="">Selecione...</option></select>
       <label>Senha</label>
@@ -65,12 +100,12 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- HOME -->
 <section id="view-home" class="view">
   <div class="container">
-    <div class="section" style="display:flex;align-items:center;justify-content:space-between">
-      <div><h2 id="empresaNome"></h2></div>
+    <div class="section" style="display:flex;justify-content:space-between;align-items:center">
+      <h3 id="empresaNome"></h3>
       <button class="tag" onclick="logout()">Sair</button>
     </div>
-    <div class="grid">
-      <div class="card" onclick="showView('checklist')"><h3>✅ Check-list</h3><p>Verificar tarefas do dia</p></div>
+    <div class="cardgrid">
+      <div class="card" onclick="showView('checklist')"><h3>✅ Check-list</h3><p>Verificar tarefas</p></div>
       <div class="card" onclick="showView('manutencoes')"><h3>🧰 Manutenções</h3><p>Rotinas técnicas</p></div>
       <div class="card" onclick="showView('desperdicios')"><h3>🥣 Desperdícios</h3><p>Registrar sobras</p></div>
       <div class="card" onclick="showView('relatorios')"><h3>📅 Histórico</h3><p>Resumo diário</p></div>
@@ -86,27 +121,29 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- CHECKLIST -->
 <section id="view-checklist" class="view">
   <div class="container">
-    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
-    <div class="section"><h3>✅ Check-list Diário</h3><div id="listChecklist"></div></div>
+    <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>✅ Check-list Diário</h3></div>
+    <div class="section" id="listChecklist"></div>
   </div>
 </section>
 
 <!-- MANUTENCOES -->
 <section id="view-manutencoes" class="view">
   <div class="container">
-    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
-    <div class="section"><h3>🧰 Manutenções</h3><div id="listManutencoes"></div></div>
+    <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>🧰 Manutenções</h3></div>
+    <div class="section" id="listManutencoes"></div>
   </div>
 </section>
 
 <!-- DESPERDICIOS -->
 <section id="view-desperdicios" class="view">
   <div class="container">
-    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
+    <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>🥣 Registrar Desperdícios</h3></div>
     <div class="section">
-      <h3>🥣 Registrar Desperdícios / Sobras</h3>
       <select id="categoria" class="select">
-        <option value="">Selecione...</option><option>Desperdício</option><option>Sobra</option><option>Devolução</option>
+        <option value="">Selecione...</option>
+        <option>Desperdício</option>
+        <option>Sobra</option>
+        <option>Devolução</option>
       </select>
       <textarea id="descricao" class="textarea" placeholder="Descreva o ocorrido"></textarea>
       <input id="quantidade" class="input" placeholder="Ex: 2kg ou R$30,00">
@@ -118,10 +155,9 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- RELATORIOS -->
 <section id="view-relatorios" class="view">
   <div class="container">
-    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
+    <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>📅 Histórico do Dia</h3></div>
     <div class="section">
-      <h3>📅 Histórico do Dia</h3>
-      <div id="relChecklistData"></div><hr><div id="relManutData"></div>
+      <h4>Checklist</h4><div id="relChecklistData"></div><hr><h4>Manutenções</h4><div id="relManutData"></div>
     </div>
   </div>
 </section>
@@ -129,9 +165,8 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
 <!-- LINKS -->
 <section id="view-links" class="view">
   <div class="container">
-    <div class="topbar"><button class="back" onclick="showView('home')">⬅ Voltar</button></div>
+    <div class="backbar"><button onclick="showView('home')">⬅ Voltar</button><h3>🌐 Acessos Rápidos</h3></div>
     <div class="section">
-      <h3>🌐 Acessos Rápidos</h3>
       <a class="btn" href="https://mercattodelicia.com.br" target="_blank">🌎 Mercatto Delícia</a><div style="height:8px"></div>
       <a class="btn" href="https://deliciagourmet.com.br" target="_blank">🍰 Delícia Gourmet</a><div style="height:8px"></div>
       <a class="btn" href="https://app.powerbi.com" target="_blank">📊 Power BI</a>
@@ -139,14 +174,15 @@ footer{color:var(--muted);text-align:center;padding:14px 0;font-size:12px}
   </div>
 </section>
 
+<div class="toast" id="toast"></div>
+
 <script>
 const LOGIN_URL='https://gerentes.clena.com.br/api/login';
 const GAS_URL='https://script.google.com/macros/s/AKfycbzO-GznI0QpgKPvwkpt4e3SSslad5i3QagsgKbQr1v5i5DTtHa0CPzUfsV3RhFGD0Vf/exec';
 const $=s=>document.querySelector(s);
-function normalizeNoAccent(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();}
 const cache={checklist:null,manutencoes:null};
-
 const views=['login','home','checklist','manutencoes','desperdicios','relatorios','links'];
+
 function showView(v){
   views.forEach(x=>$('#view-'+x)?.classList.remove('active'));
   $('#view-'+v)?.classList.add('active');
@@ -155,14 +191,14 @@ function showView(v){
   if(v==='relatorios')renderRelatorios();
 }
 
-/* login */
 window.onload=()=>{
   const sel=$('#usuarioSelect');
-  ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','MERCATTO_JAQUELINE','MERCATTO_IVANIO','DELICIA_RUAN','DELICIA_VALCIR']
+  ['MERCATTO_DHEURE','MERCATTO_YURI','MERCATTO_GLEIDSA','MERCATTO_JAQUELINE','DELICIA_RUAN','DELICIA_VALCIR']
   .forEach(id=>{const opt=document.createElement('option');opt.value=id;opt.textContent=id.replace('_',' ');sel.appendChild(opt);});
   const u=localStorage.getItem('gerente_id'),s=localStorage.getItem('gerente_senha');
   if(u&&s){sel.value=u;$('#senha').value=s;login();}
 };
+
 async function login(){
   const usuario=$('#usuarioSelect').value,senha=$('#senha').value.trim(),msg=$('#loginMsg');
   if(!usuario||!senha){msg.textContent='Preencha todos os campos.';return;}
@@ -170,9 +206,9 @@ async function login(){
   try{
     const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);const data=await res.json();
     if(!data.success){msg.textContent=data.msg||'Usuário ou senha incorretos.';return;}
-    const empNorm=normalizeNoAccent(data.empresa);
-    localStorage.setItem('gerente_id',usuario);localStorage.setItem('gerente_senha',senha);
-    localStorage.setItem('empresa',empNorm);localStorage.setItem('empresaOriginal',data.empresa);
+    localStorage.setItem('gerente_id',usuario);
+    localStorage.setItem('gerente_senha',senha);
+    localStorage.setItem('empresa',data.empresa);
     $('#empresaNome').textContent=data.empresa;
     preloadData();showView('home');
   }catch{msg.textContent='Erro de conexão.';}
@@ -181,94 +217,108 @@ function logout(){localStorage.clear();showView('login');}
 
 async function preloadData(){
   const emp=localStorage.getItem('empresa');
-  Promise.allSettled([
-    fetch(`${GAS_URL}?action=checklist&empresa=${emp}`).then(r=>r.json()).then(d=>cache.checklist=d),
-    fetch(`${GAS_URL}?action=manutencoes&empresa=${emp}`).then(r=>r.json()).then(d=>cache.manutencoes=d)
-  ]);
+  cache.checklist=await fetch(`${GAS_URL}?action=checklist&empresa=${emp}`).then(r=>r.json());
+  cache.manutencoes=await fetch(`${GAS_URL}?action=manutencoes&empresa=${emp}`).then(r=>r.json());
 }
 
-/* checklist */
+/* CHECKLIST */
 function renderChecklist(){
-  const data=cache.checklist||[];
   const box=$('#listChecklist');box.innerHTML='';
+  const data=cache.checklist||[];
   if(!data.length){box.innerHTML='<p class="tag">Nenhuma tarefa cadastrada.</p>';return;}
   data.forEach(t=>{
-    const el=document.createElement('div');el.className='item';
-    const btnText=t.status==='Concluído'?'✔ Feito':'Marcar';
-    const disabled=t.status==='Concluído'?'disabled':'';
-    el.innerHTML=`<div class="txt ${t.status==='Concluído'?'done':''}">${t.tarefa}</div>
-      <button class="btn" ${disabled} onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${btnText}</button>`;
-    box.appendChild(el);
+    const done=t.status==='Concluído';
+    box.innerHTML+=`
+      <div class="item">
+        <div class="txt ${done?'done':''}">${t.tarefa}</div>
+        <button class="btn" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
+          onclick="marcarChecklist(this,'${t.empresa}',${t.linha})">${done?'✔ Feito':'Marcar'}</button>
+      </div>`;
   });
 }
 async function marcarChecklist(btn,emp,linha){
-  btn.classList.add('loading');btn.disabled=true;
+  btn.classList.add('loading');
   try{
     const res=await fetch(`${GAS_URL}?action=atualizarStatus&empresa=${emp}&linha=${linha}`);
-    const data=await res.json();
-    btn.textContent='✔ Feito';btn.classList.remove('loading');btn.style.background='var(--success)';
+    await res.json();
+    btn.classList.remove('loading');
+    btn.style.background='var(--success)';
+    btn.textContent='✔ Feito';
+    btn.disabled=true;
     btn.parentElement.querySelector('.txt').classList.add('done');
-    alert('✅ '+(data.msg||'Tarefa concluída!'));
+    toast('✅ Tarefa concluída!');
   }catch{
-    alert('Erro ao atualizar, tente novamente.');
-    btn.disabled=false;btn.classList.remove('loading');
+    toast('⚠️ Erro ao registrar!');
+    btn.classList.remove('loading');
   }
 }
 
-/* manutenções */
+/* MANUTENÇÕES */
 function renderManutencoes(){
-  const data=cache.manutencoes||[];
   const box=$('#listManutencoes');box.innerHTML='';
+  const data=cache.manutencoes||[];
   if(!data.length){box.innerHTML='<p class="tag">Nenhuma manutenção cadastrada.</p>';return;}
   data.forEach(m=>{
-    const el=document.createElement('div');el.className='item';
-    const btnText=m.status==='Feita'?'✔ Feita':'Concluir';
-    const disabled=m.status==='Feita'?'disabled':'';
-    el.innerHTML=`<div class="txt ${m.status==='Feita'?'done':''}">${m.tarefa}</div>
-      <button class="btn" ${disabled} onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${btnText}</button>`;
-    box.appendChild(el);
+    const done=m.status==='Feita';
+    box.innerHTML+=`
+      <div class="item">
+        <div class="txt ${done?'done':''}">${m.tarefa}</div>
+        <button class="btn" style="${done?'background:var(--success)':''}" ${done?'disabled':''}
+          onclick="marcarManutencao(this,'${m.empresa}',${m.linha})">${done?'✔ Feita':'Concluir'}</button>
+      </div>`;
   });
 }
 async function marcarManutencao(btn,emp,linha){
-  btn.classList.add('loading');btn.disabled=true;
+  btn.classList.add('loading');
   try{
     const res=await fetch(`${GAS_URL}?action=atualizarManutencao&empresa=${emp}&linha=${linha}`);
-    const data=await res.json();
-    btn.textContent='✔ Feita';btn.classList.remove('loading');btn.style.background='var(--success)';
+    await res.json();
+    btn.classList.remove('loading');
+    btn.style.background='var(--success)';
+    btn.textContent='✔ Feita';
+    btn.disabled=true;
     btn.parentElement.querySelector('.txt').classList.add('done');
-    alert('🔧 '+(data.msg||'Manutenção concluída!'));
+    toast('🔧 Manutenção concluída!');
   }catch{
-    alert('Erro ao atualizar.');btn.disabled=false;btn.classList.remove('loading');
+    toast('⚠️ Erro ao registrar!');
+    btn.classList.remove('loading');
   }
 }
 
-/* desperdício */
+/* DESPERDÍCIOS */
 async function registrarLancamento(){
-  const empresa=localStorage.getItem('empresa'),cat=$('#categoria').value,desc=$('#descricao').value,qtd=$('#quantidade').value;
-  if(!cat||!desc||!qtd)return alert('Preencha todos os campos!');
-  const btn=document.querySelector('#view-desperdicios .btn');
-  btn.classList.add('loading');btn.disabled=true;
+  const empresa=localStorage.getItem('empresa'),cat=$('#categoria').value,desc=$('#descricao').value.trim(),qtd=$('#quantidade').value.trim();
+  if(!cat||!desc||!qtd)return toast('⚠️ Preencha todos os campos!');
+  const btn=$('#view-desperdicios .btn');btn.classList.add('loading');
   await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'registrarLancamento',empresa,categoria:cat,descricao:desc,qtd})});
-  btn.classList.remove('loading');btn.disabled=false;
-  alert('Registro salvo!');$('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
+  btn.classList.remove('loading');
+  $('#categoria').value='';$('#descricao').value='';$('#quantidade').value='';
+  toast('🥣 Registro salvo!');
 }
 
-/* relatórios */
+/* RELATÓRIOS */
 function renderRelatorios(){
   const c=(cache.checklist||[]).filter(x=>x.status==='Concluído');
   const m=(cache.manutencoes||[]).filter(x=>x.status==='Feita');
-  $('#relChecklistData').innerHTML=c.length?c.map(x=>`<div class='item'><div class='txt'>✔ ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma tarefa concluída.</p>';
-  $('#relManutData').innerHTML=m.length?m.map(x=>`<div class='item'><div class='txt'>🔧 ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma manutenção finalizada.</p>';
+  $('#relChecklistData').innerHTML=c.length?c.map(x=>`<div class='item'><div>✔ ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma tarefa concluída.</p>';
+  $('#relManutData').innerHTML=m.length?m.map(x=>`<div class='item'><div>🔧 ${x.tarefa}</div></div>`).join(''):'<p class="tag">Nenhuma manutenção finalizada.</p>';
 }
 
-/* envio manual de resumo */
+/* ENVIAR RESUMO */
 async function enviarResumoAgora(){
-  const empresa=localStorage.getItem('empresaOriginal')||localStorage.getItem('empresa');
-  const btn=document.querySelector('#view-home .btn');
-  btn.classList.add('loading');btn.disabled=true;
+  const empresa=localStorage.getItem('empresa');
+  const btn=$('#view-home .btn');btn.classList.add('loading');
   await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'enviarResumoAgora',empresa})});
-  btn.classList.remove('loading');btn.disabled=false;
-  alert('📧 Resumo solicitado! Será enviado aos e-mails configurados.');
+  btn.classList.remove('loading');
+  toast('📧 Resumo enviado!');
+}
+
+/* TOAST */
+function toast(msg){
+  const el=$('#toast');
+  el.textContent=msg;
+  el.style.display='block';
+  setTimeout(()=>el.style.display='none',2500);
 }
 </script>
 </body>
