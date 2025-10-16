@@ -47,19 +47,9 @@ header{
 }
 footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 .overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.8);
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
   color:#fff;display:flex;align-items:center;justify-content:center;
   font-weight:600;font-size:18px;z-index:9999;
-}
-.popup{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:var(--card);padding:20px;border-radius:12px;width:90%;max-width:400px;
-  box-shadow:var(--shadow);z-index:10000;display:none;
-}
-.popup h3{margin-top:0;color:var(--accent2);}
-.popup button{
-  margin-top:10px;padding:6px 12px;border:0;border-radius:6px;
-  background:var(--accent);font-weight:600;cursor:pointer;
 }
 </style>
 </head>
@@ -72,6 +62,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 <div class="container">
   <div class="section" style="text-align:center">
     <h3 id="empresaTitulo"></h3>
+    <p id="usuarioInfo" style="color:var(--muted);font-size:14px"></p>
   </div>
 
   <div class="section" id="listaChecklist"></div>
@@ -89,27 +80,30 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
 
 <div class="toast" id="toast"></div>
 
-<!-- popup histórico -->
-<div class="popup" id="popup">
-  <h3>📋 Histórico da tarefa</h3>
-  <div id="popupBody"></div>
-  <button onclick="fecharPopup()">Fechar</button>
-</div>
-
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbw7L7EltP8gOCvTNhqOhmecicOohbZmznHYZXSzCFplW3GU096isvFu_nsfNl-fawoA/exec';
 const $=s=>document.querySelector(s);
-let empresaAtual=localStorage.getItem('empresa')||'MERCATTO DELÍCIA';
-let gerenteAtual=localStorage.getItem('gerente')||'Gerente';
+
+let fullLogin=localStorage.getItem('gerente') || 'MERCATTO DELÍCIA_GERENTE';
+let empresaAtual='', gerenteAtual='';
+
+/* === Extrai empresa e gerente === */
+if(fullLogin.includes('_')){
+  [empresaAtual,gerenteAtual]=fullLogin.split('_');
+}else{
+  empresaAtual='MERCATTO DELÍCIA';
+  gerenteAtual=fullLogin;
+}
+
+$('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
+$('#usuarioInfo').textContent=`Responsável: ${gerenteAtual}`;
+
 let checklist=[],historico=[],ultimoFechamento='';
 
-/* ===== INÍCIO ===== */
-window.onload=async()=>{
-  $('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
-  await carregarDados();
-};
+/* === INÍCIO === */
+window.onload=async()=>{await carregarDados();};
 
-/* ===== CARREGAR CHECKLIST E HISTÓRICO ===== */
+/* === CARREGAR CHECKLIST + HISTÓRICO === */
 async function carregarDados(){
   $('#overlay').style.display='flex';
   try{
@@ -120,40 +114,37 @@ async function carregarDados(){
     checklist=await resCheck.json();
     historico=await resHist.json();
 
-    // Descobre última data de fechamento
     const fechamento=historico.filter(h=>h.divisor==='Sim');
-    if(fechamento.length){
-      ultimoFechamento=fechamento[fechamento.length-1].data;
-    }
+    if(fechamento.length)ultimoFechamento=fechamento[fechamento.length-1].data;
 
     renderChecklist();
-  }catch(err){
-    console.error(err);
+  }catch(e){
     $('#listaChecklist').innerHTML='<p>⚠️ Erro ao carregar tarefas.</p>';
   }finally{
     $('#overlay').style.display='none';
   }
 }
 
-/* ===== RENDER CHECKLIST ===== */
+/* === RENDER === */
 function renderChecklist(){
   const box=$('#listaChecklist');
   if(!checklist.length){box.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';return;}
   box.innerHTML='';
   checklist.forEach(t=>{
-    const jaFeita=historico.some(h=>h.tarefa===t.tarefa && (!ultimoFechamento || h.data>ultimoFechamento));
+    const jaFeita=historico.some(h=>h.tarefa===t.tarefa && (!ultimoFechamento||h.data>ultimoFechamento));
     const btnClass=jaFeita?'background:var(--success);color:#fff':'';
     box.innerHTML+=`
       <div class="item">
         <div class="${jaFeita?'done':''}">${t.tarefa}</div>
-        <button class="btn small" style="${btnClass}" onclick="${jaFeita?`mostrarHistorico('${t.tarefa}')`:`marcarFeito(this,'${t.tarefa}')`}">
+        <button class="btn small" style="${btnClass}"
+          onclick="${jaFeita?`mostrarHistorico('${t.tarefa}')`:`marcarFeito(this,'${t.tarefa}')`}">
           ${jaFeita?'✔ Feita':'Fazer'}
         </button>
       </div>`;
   });
 }
 
-/* ===== MARCAR COMO FEITA ===== */
+/* === MARCAR FEITA === */
 async function marcarFeito(btn,tarefa){
   btn.style.background='var(--success)';
   btn.style.color='#fff';
@@ -165,30 +156,25 @@ async function marcarFeito(btn,tarefa){
       empresa:empresaAtual,
       gerente:gerenteAtual,
       tarefa:tarefa,
-      status:`Feito por ${gerenteAtual}`
+      status:`Feito`
     })});
     toast(`✅ ${tarefa} feita por ${gerenteAtual}`);
   }catch{
-    toast('⚠️ Erro ao registrar tarefa!');
+    toast('⚠️ Erro ao registrar tarefa');
   }
 }
 
-/* ===== MOSTRAR HISTÓRICO DA TAREFA ===== */
+/* === MOSTRAR HISTÓRICO === */
 function mostrarHistorico(tarefa){
-  const box=$('#popupBody');
-  const registros=historico.filter(h=>h.tarefa===tarefa && (!ultimoFechamento || h.data>ultimoFechamento));
-  if(!registros.length){
-    box.innerHTML='<p>Sem histórico recente.</p>';
-  }else{
-    box.innerHTML=registros.map(r=>`
-      <p><b>${r.data}</b><br>${r.status}<br><small>Por: ${r.gerente}</small></p>
-    `).join('<hr>');
+  const registros=historico.filter(h=>h.tarefa===tarefa && (!ultimoFechamento||h.data>ultimoFechamento));
+  let msg='Sem histórico recente.';
+  if(registros.length){
+    msg=registros.map(r=>`<p><b>${r.data}</b><br>${r.status}<br><small>Por: ${r.gerente}</small></p>`).join('<hr>');
   }
-  $('#popup').style.display='block';
+  alert(`📋 Histórico de "${tarefa}"\n\n${registros.map(r=>`${r.data} - ${r.gerente} - ${r.status}`).join('\n')||'Sem registros'}`);
 }
-function fecharPopup(){$('#popup').style.display='none';}
 
-/* ===== FINALIZAR CHECKLIST ===== */
+/* === FINALIZAR === */
 async function concluirChecklist(){
   const btn=event.target;
   btn.disabled=true;
@@ -206,10 +192,10 @@ async function concluirChecklist(){
   }
 }
 
-/* ===== VOLTAR ===== */
+/* === VOLTAR === */
 function voltar(){window.location.href='index.html';}
 
-/* ===== TOAST ===== */
+/* === TOAST === */
 function toast(msg){
   const el=$('#toast');
   el.textContent=msg;
