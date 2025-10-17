@@ -152,7 +152,7 @@ function renderChecklist(){
     return `<div class="item">
       <div class="${done?'done':''}">${t.tarefa}</div>
       <button class="btn small ${done?'done':''}" onclick="${done?'mostrarHistorico(\''+t.tarefa+'\')':'marcarFeito(this,\''+t.tarefa+'\')'}">
-        ${done?'CONCLUÍDA':'Fazer'}
+        ${done?'CONCLUÍDA':'Feita'}
       </button>
     </div>`;
   }).join('');
