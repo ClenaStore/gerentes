@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>🧰 Manutenções - Delícia & Mercatto</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <style>
 :root{
   --bg:#0b0f19;--card:#151d2f;--accent:#ff8f1f;--accent2:#ffb347;
@@ -19,20 +19,15 @@ header{
   color:#000;text-align:center;padding:14px;font-weight:700;font-size:18px;
   box-shadow:0 3px 8px rgba(0,0,0,.4);
 }
-.container{max-width:850px;margin:auto;padding:16px;}
-.section{
-  background:var(--card);border-radius:16px;padding:18px;
-  box-shadow:var(--shadow);margin-bottom:18px;
-}
-button{
-  border:0;border-radius:8px;font-weight:600;cursor:pointer;
-  padding:8px 12px;font-size:14px;
-}
+.container{max-width:950px;margin:auto;padding:16px;}
+.section{background:var(--card);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-bottom:18px;}
+.stats{display:flex;justify-content:space-around;text-align:center;margin-bottom:10px;}
+.stat-box{background:#1e293b;padding:12px 18px;border-radius:10px;box-shadow:inset 0 0 10px rgba(0,0,0,.2);}
+.stat-box h2{margin:0;color:var(--accent);font-size:22px;}
+.stat-box p{margin:4px 0 0;font-size:13px;color:var(--muted);}
+button{border:0;border-radius:8px;font-weight:600;cursor:pointer;padding:8px 12px;font-size:14px;}
 .btn-primary{background:var(--accent);color:#000;}
-.btn-danger{background:var(--red);color:#fff;}
-.btn-green{background:var(--green);color:#fff;}
 .btn-gray{background:#334155;color:#fff;}
-.item{background:#1e293b;border-radius:10px;padding:12px;margin:6px 0;}
 .toast{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--accent);color:#000;padding:10px 18px;border-radius:999px;
@@ -53,6 +48,13 @@ button{
   resize:none;font-size:13px;
 }
 footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
+.fc{background:var(--card);border-radius:12px;padding:10px;}
+.fc-toolbar-title{color:var(--accent);}
+.fc-daygrid-day-number{color:var(--text);}
+.fc-event{border:0;border-radius:6px;font-size:12px;padding:2px 4px;}
+.fc-event-pendente{background:var(--red);}
+.fc-event-concluido{background:var(--green);}
+.fc-event-outro{background:var(--accent2);color:#000;}
 </style>
 </head>
 <body>
@@ -62,105 +64,112 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:16px;}
   <div class="section" style="text-align:center">
     <h3 id="empresaTitulo"></h3>
     <p id="usuarioInfo" style="color:var(--muted);font-size:14px"></p>
-    <input id="dataFiltro" type="text" class="input" placeholder="Selecione uma data">
   </div>
 
-  <div class="section" id="listaManutencoes"><p>Carregando...</p></div>
+  <div class="stats">
+    <div class="stat-box">
+      <h2 id="pendentesMes">0</h2><p>Pendentes no Mês</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="concluidasMes">0</h2><p>Concluídas no Mês</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div id="calendar"></div>
+  </div>
 
   <div style="text-align:center;margin-top:20px">
     <button class="btn-primary" onclick="finalizarDia()">✅ Finalizar Dia</button>
-  </div>
-
-  <div style="text-align:center;margin-top:20px">
     <button class="btn-gray" onclick="voltar()">⬅ Voltar</button>
   </div>
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbymySoncD4zG-shT3qrsC9P-a62dXt5-9gXppQ5TsuEJvd0jHCTSXpBTu2k1YmljUry/exec';
 const $=s=>document.querySelector(s);
-
 let empresaAtual=localStorage.getItem('empresa')||'MERCATTO DELÍCIA';
 let gerenteAtual=localStorage.getItem('gerente')||'Gerente';
 $('#empresaTitulo').textContent=`Empresa: ${empresaAtual}`;
 $('#usuarioInfo').textContent=`Gerente: ${gerenteAtual}`;
+let manutencoes=[], calendar;
 
-let manutencoes=[];
+/* ================== CARREGAR DADOS ================== */
+(async function init(){
+  await carregar();
+  initCalendar();
+  setInterval(carregar,60000);
+})();
 
-/* ================== INICIALIZA ================== */
-flatpickr("#dataFiltro",{
-  locale:"pt",dateFormat:"d/m/Y",defaultDate:new Date(),
-  onChange:()=>filtrarPorData()
-});
-
-(async()=>{await carregar();setInterval(carregar,60000);})();
-
-/* ================== CARREGAR ================== */
 async function carregar(){
   try{
     const res=await fetch(`${GAS_URL}?action=manutencoes&empresa=${encodeURIComponent(empresaAtual)}`);
     manutencoes=await res.json()||[];
-    filtrarPorData();
+    atualizarResumo();
+    if(calendar) atualizarEventos();
   }catch{toast('⚠️ Erro ao carregar.');}
 }
 
-function filtrarPorData(){
-  const data=$('#dataFiltro').value||new Date().toLocaleDateString('pt-BR');
-  const dia=new Date(data.split('/').reverse().join('-'));
-  const filtradas=manutencoes.filter(m=>verificarAgendamento(m,dia));
-  render(filtradas);
+/* ================== CALENDÁRIO ================== */
+function initCalendar(){
+  const el=document.getElementById('calendar');
+  calendar=new FullCalendar.Calendar(el,{
+    initialView:'dayGridMonth',
+    locale:'pt-br',
+    height:'auto',
+    headerToolbar:{left:'prev,next today',center:'title',right:''},
+    events:[],
+    eventClick:info=>{
+      const e=info.event.extendedProps;
+      abrirPopup(e.item,e.status,e.detalhes,e.responsavel,e.dataAgendada);
+    }
+  });
+  calendar.render();
+  atualizarEventos();
 }
 
-/* ================== LÓGICA DE FREQUÊNCIA ================== */
-function verificarAgendamento(m,dia){
-  const freq=(m.frequencia||'').toLowerCase();
-  const dataItem=parseData(m.dataAgendada);
-  if(!freq||freq==='única'||freq==='fixa')return mesmaData(dia,dataItem);
-  if(freq.includes('diário'))return true;
-  if(freq.includes('semanal'))return dia.getDay()===dataItem.getDay();
-  if(freq.includes('quinzenal')){
-    const diff=(dia-dataItem)/(1000*60*60*24);
-    return diff>=0 && diff%15<1;
-  }
-  if(freq.includes('mensal')){
-    const diaFixo=parseInt(freq.replace(/\D/g,''))||dataItem.getDate();
-    return dia.getDate()===diaFixo;
-  }
-  return false;
-}
-function parseData(d){try{return new Date(d.split('/').reverse().join('-'));}catch{return new Date();}}
-function mesmaData(a,b){return a.getDate()===b.getDate()&&a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear();}
-
-/* ================== RENDER ================== */
-function render(lista){
-  const box=$('#listaManutencoes');
-  if(!lista.length){box.innerHTML='<p>Nenhuma manutenção para este dia.</p>';return;}
-  box.innerHTML=lista.map(m=>`
-    <div class="item">
-      <div><b>${m.item}</b><br>
-        <small>${m.detalhes||''}</small><br>
-        <small>Responsável: ${m.responsavel||'-'}</small>
-      </div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;">
-        <button class="btn-green" onclick="acao('${m.item}','Concluído')">✅</button>
-        <button class="btn-primary" onclick="acao('${m.item}','Reagendar')">🔁</button>
-        <button class="btn-danger" onclick="acao('${m.item}','Cancelado')">❌</button>
-      </div>
-    </div>`).join('');
+function atualizarEventos(){
+  const eventos=manutencoes.map(m=>{
+    let cor='fc-event-outro';
+    if(m.status?.toLowerCase().includes('concl')) cor='fc-event-concluido';
+    else if(m.status?.toLowerCase().includes('pend')) cor='fc-event-pendente';
+    return {
+      title:m.item,
+      start:parseDataISO(m.dataAgendada||m.data||new Date()),
+      className:[cor],
+      extendedProps:m
+    };
+  });
+  calendar.removeAllEvents();
+  calendar.addEventSource(eventos);
 }
 
-/* ================== AÇÕES ================== */
-function acao(item,acao){
+function parseDataISO(d){
+  try{
+    if(!d)return new Date();
+    if(d.includes('/')){const [dd,mm,aa]=d.split('/');return `${aa}-${mm}-${dd}`;}
+    return d;
+  }catch{return new Date();}
+}
+
+/* ================== POPUP AÇÕES ================== */
+function abrirPopup(item,status,detalhes,responsavel,dataAgendada){
   const p=document.createElement('div');
   p.className='popup-bg';
   p.innerHTML=`
   <div class="popup">
     <h3>${item}</h3>
-    <p>${acao==='Concluído'?'Confirma conclusão?':'Informe justificativa ou nova data:'}</p>
+    <p>${detalhes||''}</p>
+    <p><b>Responsável:</b> ${responsavel||'-'}<br><b>Data:</b> ${dataAgendada||'-'}</p>
     <textarea id="just" placeholder="Observação..."></textarea>
-    <button onclick="registrar('${item}','${acao}')">${acao}</button>
-    <button style="margin-top:6px" onclick="this.closest('.popup-bg').remove()">Fechar</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <button onclick="registrar('${item}','Concluído')">✅ Concluir</button>
+      <button onclick="registrar('${item}','Reagendar')">🔁 Reagendar</button>
+      <button onclick="registrar('${item}','Cancelado')">❌ Cancelar</button>
+    </div>
+    <button style="margin-top:10px" onclick="this.closest('.popup-bg').remove()">Fechar</button>
   </div>`;
   document.body.appendChild(p);
 }
@@ -174,9 +183,23 @@ async function registrar(item,acao){
     })});
     toast(`✅ ${acao} registrado.`);
     document.querySelector('.popup-bg').remove();
-    carregar();
+    await carregar();
   }catch{toast('Erro ao registrar.');}
 }
+
+/* ================== RESUMO ================== */
+function atualizarResumo(){
+  const mesAtual=new Date().getMonth(), anoAtual=new Date().getFullYear();
+  const filtro=manutencoes.filter(m=>{
+    const d=parseDataObj(m.dataAgendada||m.data);
+    return d.getMonth()===mesAtual && d.getFullYear()===anoAtual;
+  });
+  const pend=filtro.filter(m=>m.status?.toLowerCase().includes('pend')).length;
+  const concl=filtro.filter(m=>m.status?.toLowerCase().includes('concl')).length;
+  $('#pendentesMes').textContent=pend;
+  $('#concluidasMes').textContent=concl;
+}
+function parseDataObj(d){try{if(!d)return new Date();if(d.includes('/')){const [dd,mm,aa]=d.split('/');return new Date(aa,mm-1,dd);}return new Date(d);}catch{return new Date();}}
 
 /* ================== FINALIZAR DIA ================== */
 async function finalizarDia(){
