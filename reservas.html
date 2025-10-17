@@ -4,130 +4,210 @@
   <meta charset="UTF-8" />
   <title>Painel de Reservas • Mercatto Delícia</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <meta name="color-scheme" content="light dark" />
+  <meta name="color-scheme" content="dark light" />
   <style>
-    /* ============ Design base ============ */
+    /* ================== TEMA DESPERDÍCIO (Dark + Laranja Mercatto) ================== */
     :root{
-      --bg:#f3f5f9; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e5e7eb;
-      --brand:#2563eb; --brand-2:#1e40af; --ok:#16a34a; --warn:#b45309; --danger:#ef4444;
-      --accent:#f59e0b; --radius:16px;
-      --shadow: 0 12px 30px rgba(2,6,23,.06);
-      --glass: rgba(255,255,255,.6);
+      --bg:#0b0f19;
+      --card:#151d2f;
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --line:#243043;
+
+      --accent:#ff8f1f;
+      --accent2:#ffb347;
+
+      --ok:#22c55e;
+      --warn:#d97706;
+      --danger:#ef4444;
+
+      --radius:16px;
+      --shadow:0 12px 30px rgba(0,0,0,.45);
+      --glass:rgba(2,6,23,.45);
     }
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#0b0e14; --card:#0f131b; --text:#e5e7eb; --muted:#9ca3af; --line:#1f2937;
-        --shadow: 0 12px 30px rgba(0,0,0,.35); --glass: rgba(17,24,39,.5);
-      }
-    }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:
-        radial-gradient(1200px 800px at -10% -20%, rgba(37,99,235,.08), transparent 60%),
-        radial-gradient(900px 700px at 110% -10%, rgba(16,185,129,.08), transparent 60%),
-        var(--bg);
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--text);
+      background:
+        radial-gradient(1000px 700px at -5% -10%, rgba(255,143,31,.10), transparent 60%),
+        radial-gradient(1000px 700px at 110% -20%, rgba(255,179,71,.10), transparent 60%),
+        linear-gradient(180deg, #0a0f1b, #0b0f19 40%, #0b0f19 100%);
     }
 
     .wrap{max-width:1180px; margin:auto; padding:28px 18px 40px}
-    header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px}
-    .title{font-size:clamp(1.2rem,2.6vw,1.8rem); font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:12px}
-    .badge{font-size:.82rem; background:linear-gradient(90deg,var(--brand),var(--brand-2)); color:#fff;
-      padding:6px 10px; border-radius:999px; box-shadow:var(--shadow)}
 
-    /* Cartão com “glass” leve */
-    .card{
-      background:linear-gradient(180deg,var(--card),var(--card)) padding-box,
-                 linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0)) border-box;
-      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
-      overflow:hidden;
+    /* Header */
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px
     }
-    .card-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px dashed var(--line); background:var(--glass); backdrop-filter: blur(6px)}
+    .title{
+      font-size:clamp(1.2rem,2.6vw,1.8rem); font-weight:900; letter-spacing:.2px;
+      display:flex; align-items:center; gap:12px
+    }
+    .title::before{
+      content:""; width:14px; height:14px; border-radius:4px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      box-shadow:0 0 0 2px rgba(255,143,31,.2), 0 0 24px rgba(255,143,31,.3);
+    }
+    .badge{
+      font-size:.82rem;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      color:#000;
+      padding:6px 10px; border-radius:999px; box-shadow:var(--shadow); font-weight:800;
+    }
+
+    /* Cards */
+    .card{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)) padding-box,
+        linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0)) border-box;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      backdrop-filter:saturate(120%) blur(6px);
+    }
+    .card-head{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 18px; border-bottom:1px dashed var(--line);
+      background:linear-gradient(90deg, rgba(255,143,31,.10), rgba(255,179,71,.08) 60%, transparent);
+    }
     .card-head h2{margin:0; font-size:1.05rem}
     .section{padding:18px}
     .section + .section{border-top:1px dashed var(--line)}
-    .section h3{margin:0 0 10px; font-size:1rem; color:var(--muted); font-weight:700; letter-spacing:.3px}
+    .section h3{margin:0 0 10px; font-size:1rem; color:var(--muted); font-weight:800; letter-spacing:.3px}
 
     /* Inputs */
-    label{font-weight:600; font-size:.94rem}
+    label{font-weight:700; font-size:.94rem}
     input, select, textarea, button{
       width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--line);
-      background:transparent; color:inherit; font-size:16px; outline:none; transition:.15s;
+      background:#0f172a; color:var(--text); font-size:16px; outline:none; transition:.15s;
     }
-    input:focus, select:focus, textarea:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(37,99,235,.15) }
+    input::placeholder, textarea::placeholder{color:#7c8aa4}
+    input:focus, select:focus, textarea:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(255,143,31,.22), 0 0 28px rgba(255,143,31,.10) inset;
+    }
     textarea{min-height:90px; resize:vertical}
     .hint{font-size:.82rem; color:var(--muted)}
+
     .toolbar{display:flex; gap:10px; flex-wrap:wrap}
-    .btn{border:0; cursor:pointer; font-weight:700}
-    .btn-primary{background:linear-gradient(90deg,var(--brand),var(--brand-2)); color:#fff}
-    .btn-ghost{background:#0000; border:1px dashed var(--line)}
-    .btn-danger{background:var(--danger); color:#fff}
+    .btn{border:0; cursor:pointer; font-weight:900; letter-spacing:.2px}
+    .btn-primary{
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      color:#000;
+      box-shadow:0 6px 18px rgba(255,143,31,.25);
+    }
+    .btn-primary:hover{filter:brightness(1.05)}
+    .btn-ghost{
+      background:#0f172a; border:1px dashed var(--line); color:var(--text);
+    }
+    .btn-ghost:hover{border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,143,31,.12)}
+    .btn-danger{background:linear-gradient(90deg,#ef4444,#f87171); color:#fff}
     .btn:disabled{opacity:.6; cursor:not-allowed}
     .row{display:flex; align-items:center; gap:10px}
-    .chip{border:1px solid var(--line); border-radius:999px; padding:6px 10px; font-size:.84rem; color:var(--muted); background:var(--glass); backdrop-filter: blur(6px)}
-    .file-box{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px dashed var(--line); border-radius:12px}
+
+    .chip{
+      border:1px solid var(--line); border-radius:999px; padding:6px 10px;
+      font-size:.84rem; color:var(--muted); background:rgba(15,23,42,.6); backdrop-filter: blur(6px)
+    }
+
+    .file-box{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px;
+      border:1px dashed var(--line); border-radius:12px; background:#0f172a;
+    }
     .file-name{font-size:.9rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
     .spinner{display:none; margin-top:10px; color:var(--muted)}
     .spinner.show{display:block}
-    .toast{position:fixed; inset:auto 16px 16px auto; background:#111827; color:#fff; padding:12px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3); display:none; z-index:50}
+
+    .toast{
+      position:fixed; inset:auto 16px 16px auto;
+      background:linear-gradient(135deg,#0b1220,#111827);
+      color:#fff; padding:12px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.5);
+      border:1px solid #1f2937;
+      display:none; z-index:50
+    }
     .toast.show{display:block}
 
-    /* ============ Calendário (maior, embaixo) ============ */
+    /* ================== Calendário ================== */
     .cal{padding:16px}
     .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
-    .cal-title{font-weight:800; font-size:1.1rem}
+    .cal-title{font-weight:900; font-size:1.1rem}
     .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px}
     .cal-dow{font-size:.9rem; color:var(--muted); text-align:center; padding:6px 0}
     .cal-day{
-      background:transparent; border:1px solid var(--line); border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+      border:1px solid var(--line); border-radius:14px;
       padding:12px; min-height:120px; position:relative; cursor:pointer;
-      transition:.12s transform ease, .12s box-shadow ease;
+      transition:.12s transform ease, .12s box-shadow ease, .12s border-color ease;
     }
-    .cal-day:hover{transform:translateY(-1px); box-shadow:0 8px 20px rgba(2,6,23,.06)}
+    .cal-day:hover{
+      transform:translateY(-1px);
+      box-shadow:0 12px 26px rgba(0,0,0,.25);
+      border-color:rgba(255,143,31,.55);
+    }
     .cal-day.out{opacity:.45}
     .cal-day .num{font-weight:900; font-size:1.05rem}
     .cal-day .tags{position:absolute; bottom:10px; left:10px; right:10px; display:flex; gap:6px; flex-wrap:wrap}
-    .tag{font-size:.78rem; padding:4px 8px; border-radius:999px; border:1px solid var(--line)}
-    .t-pend{background:#fef3c7; border-color:#fde68a}
-    .t-done{background:#dcfce7; border-color:#bbf7d0}
-    /* VIP (azul) x OUTROS (laranja) */
-    .t-vip{ background:#dbeafe; border-color:#93c5fd; color:#1e3a8a; }
-    .t-outros{ background:#ffedd5; border-color:#fed7aa; color:#9a3412; }
+    .tag{
+      font-size:.78rem; padding:4px 8px; border-radius:999px; border:1px solid var(--line);
+      background:#0f172a; color:#cdd6e3
+    }
+    .t-pend{background:#3c2a07; border-color:#5a3e0b; color:#ffcd73}
+    .t-done{background:#0e2a12; border-color:#1f7a39; color:#9ef7b8}
+    .t-vip{ background:#0b274a; border-color:#1b4c8b; color:#86baff; }
+    .t-outros{ background:#3a230e; border-color:#794216; color:#ffbf86; }
 
-    /* ============ Resumo ============ */
-    .summary{padding:16px; border-top:1px dashed var(--line); background:var(--glass)}
+    /* ================== Resumo ================== */
+    .summary{padding:16px; border-top:1px dashed var(--line); background:linear-gradient(180deg, rgba(255,255,255,.03), transparent)}
     .summary-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
     @media (max-width:720px){ .summary-grid{grid-template-columns:1fr} }
-    .kpi{border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--card)}
+    .kpi{
+      border:1px solid var(--line); border-radius:12px; padding:14px; background:#0f172a;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+    }
     .kpi .label{font-size:.9rem; color:var(--muted)}
     .kpi .value{font-size:1.4rem; font-weight:900}
     .sum-note{font-size:.82rem; color:var(--muted); margin-top:6px}
 
     footer{padding:16px 18px 18px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
 
-    /* ============ Modais ============ */
-    .modal{position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:flex-end; z-index:60}
+    /* ================== Modais ================== */
+    .modal{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:flex-end; z-index:60; backdrop-filter: blur(2px);
+    }
     .modal.show{display:flex}
-    .sheet{background:var(--card); width:100%; max-height:82vh; border-radius:18px 18px 0 0; box-shadow:0 -10px 30px rgba(0,0,0,.25); overflow:auto}
-    .sheet h3{margin:14px 16px}
+    .sheet{
+      background:linear-gradient(180deg, #0f172a, #0b1220);
+      width:100%; max-height:82vh; border-radius:18px 18px 0 0;
+      box-shadow:0 -10px 30px rgba(0,0,0,.5); overflow:auto; border:1px solid #1f2937;
+    }
+    .sheet h3{margin:14px 16px; color:#ffb347}
     .sheet .list{padding:0 16px 16px}
-    .res-item{border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:10px; background:var(--glass)}
+    .res-item{
+      border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+    }
     .res-item .top{display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap}
     .res-item .name{font-weight:800}
     .res-item .meta{font-size:.9rem; color:var(--muted)}
 
-    /* Modal de Concluir (central) */
+    /* Modal de Concluir central */
     #finishModal{align-items:center; justify-content:center}
     #finishModal .sheet{max-width:520px; border-radius:16px; overflow:hidden}
 
-    /* Modal de Edição (full sheet) — opcional (não usamos para editar os dados base) */
+    /* Edit sheet */
     #editModal .sheet{border-radius:18px 18px 0 0}
     .inline-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .inline-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px}
     @media (max-width:760px){ .inline-grid,.inline-3{grid-template-columns:1fr} }
-    .list-bordered{border:1px dashed var(--line); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:10px}
+    .list-bordered{border:1px dashed var(--line); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:10px; background:#0f172a}
     .item-row{display:grid; grid-template-columns:1fr 1fr; gap:8px}
     .item-row-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
     .item-actions{display:flex; gap:8px; justify-content:flex-end}
@@ -140,7 +220,7 @@
       <div class="badge">Cadastro → Calendário → Resumo</div>
     </header>
 
-    <!-- ============ FORMULÁRIO (em cima) ============ -->
+    <!-- ================== FORMULÁRIO ================== -->
     <form id="reservaForm" class="card" novalidate>
       <div class="card-head"><h2>Nova / Editar Reserva</h2></div>
 
@@ -268,7 +348,7 @@
       </footer>
     </form>
 
-    <!-- ============ CALENDÁRIO (embaixo) + RESUMO ============ -->
+    <!-- ================== CALENDÁRIO + RESUMO ================== -->
     <div class="card" style="margin-top:20px">
       <div class="card-head">
         <h2>Calendário de Reservas</h2>
@@ -311,7 +391,7 @@
     </div>
   </div>
 
-  <!-- ============ MODAIS ============ -->
+  <!-- ================== MODAIS ================== -->
   <div class="modal" id="dayModal" aria-hidden="true">
     <div class="sheet">
       <h3 id="modalTitle">Reservas do dia</h3>
@@ -334,7 +414,7 @@
     </div>
   </div>
 
-  <!-- Modal de Edição (opcional — mantido caso queira usar depois) -->
+  <!-- Modal de Edição -->
   <div class="modal" id="editModal" aria-hidden="true">
     <div class="sheet">
       <h3 style="margin-bottom:0">✏️ Editar reserva / adicionar pagamentos & anexos</h3>
@@ -500,7 +580,7 @@
         try{
           const body = new URLSearchParams({ acao:'excluir', id });
           const res = await fetch(endpoint, { method:'POST', body });
-        const txt = await res.text();
+          const txt = await res.text();
           if(!res.ok) return { ok:false, message: txt || 'Falha ao excluir na planilha.' };
           return { ok:true, message: txt || 'Excluída' };
         }catch(e){
@@ -860,27 +940,27 @@
     async function loadMonth(ano, mes){
       try{
         const data = await api.listar(ano, mes);
-state.reservas = data.map((r,i)=> {
-  const idReal = r.id ?? r.ID ?? r.Id ?? r.IdReserva ?? r.IdPlanilha ?? r['Id'] ?? '';
-  return {
-    id: idReal || `ROW-${i+1}`,
-    _semIdReal: !idReal,
-    nome: r.nome||r.Nome||'',
-    email:r.email||r.Email||'',
-    telefone: r.telefone || r.Telefone || r.Fone || '',
-    pessoas:r.pessoas||r.Pessoas||'',
-    mesa:r.mesa||r.Mesa||r.Local||'',
-    cardapio:r.cardapio||r.Cardapio||'',
-    observacoes: r.observacoes || r.Observacoes || r.Obs || '',
-    datahora: r.datahora || r.DataHora || r.data || r.Data || '',
-    valorEstimado: String(r.valorEstimado ?? r.ValorEstimado ?? '0'),
-    pagamentoAntecipado: String(r.pagamentoAntecipado ?? r.Adiantamento ?? '0'),
-    valorFinalPago: String(r.valorFinalPago ?? r.FinalPago ?? '0'),
-    banco: r.banco || r.Banco || '',
-    status: r.status || r.Status || 'Pendente',
-    ...r
-  };
-});
+        state.reservas = data.map((r,i)=> {
+          const idReal = r.id ?? r.ID ?? r.Id ?? r.IdReserva ?? r.IdPlanilha ?? r['Id'] ?? '';
+          return {
+            id: idReal || `ROW-${i+1}`,
+            _semIdReal: !idReal,
+            nome: r.nome||r.Nome||'',
+            email:r.email||r.Email||'',
+            telefone: r.telefone || r.Telefone || r.Fone || '',
+            pessoas:r.pessoas||r.Pessoas||'',
+            mesa:r.mesa||r.Mesa||r.Local||'',
+            cardapio:r.cardapio||r.Cardapio||'',
+            observacoes: r.observacoes || r.Observacoes || r.Obs || '',
+            datahora: r.datahora || r.DataHora || r.data || r.Data || '',
+            valorEstimado: String(r.valorEstimado ?? r.ValorEstimado ?? '0'),
+            pagamentoAntecipado: String(r.pagamentoAntecipado ?? r.Adiantamento ?? '0'),
+            valorFinalPago: String(r.valorFinalPago ?? r.FinalPago ?? '0'),
+            banco: r.banco || r.Banco || '',
+            status: r.status || r.Status || 'Pendente',
+            ...r
+          };
+        });
 
       }catch(e){
         state.reservas = [];
