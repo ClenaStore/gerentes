@@ -108,13 +108,27 @@ h2{margin-top:0;color:var(--accent2);font-weight:600;}
 const LOGIN_URL='https://gerentes.clena.com.br/api/login';
 const $=s=>document.querySelector(s);
 
-/* LOGIN */
+/* ✅ AUTOLOGIN SE TIVER CACHE */
+window.addEventListener('load',()=>{
+  const usuario=localStorage.getItem('usuario');
+  const empresa=localStorage.getItem('empresa');
+  const gerente=localStorage.getItem('gerente');
+  if(usuario&&empresa&&gerente){
+    $('#loginBox').style.display='none';
+    $('#homeBox').style.display='block';
+    $('#empresaNome').textContent=`${empresa} • ${gerente}`;
+    toast('👋 Bem-vindo de volta, '+gerente+'!');
+  }
+});
+
+/* LOGIN NORMAL */
 async function login(){
   const usuario=$('#usuarioSelect').value.trim();
   const senha=$('#senha').value.trim();
   const msg=$('#loginMsg');
   if(!usuario||!senha){msg.textContent='Preencha todos os campos.';return;}
   msg.textContent='';
+
   try{
     const res=await fetch(`${LOGIN_URL}?usuario=${usuario}&senha=${senha}`);
     const data=await res.json();
@@ -124,21 +138,20 @@ async function login(){
       return;
     }
 
-    // 🔹 Extrai empresa e nome
+    // Extrai empresa e nome
     const partes=usuario.split('_');
     const empresa=partes[0].toUpperCase();
     const gerente=partes[1] ? partes[1].charAt(0).toUpperCase()+partes[1].slice(1).toLowerCase() : 'Gerente';
 
-    // 🔹 Nome de exibição da empresa
+    // Nome de exibição da empresa
     let empresaNomeDisplay = (empresa==='MERCATTO') ? 'MERCATTO DELÍCIA' : 'DELÍCIA GOURMET';
     $('#empresaNome').textContent = `${empresaNomeDisplay} • ${gerente}`;
 
-    // 🔹 Salva login para os outros painéis
+    // Guarda no cache
     localStorage.setItem('empresa', empresaNomeDisplay);
     localStorage.setItem('gerente', gerente);
     localStorage.setItem('usuario', usuario);
 
-    // 🔹 Exibe home
     $('#loginBox').style.display='none';
     $('#homeBox').style.display='block';
     toast('👋 Bem-vindo, '+gerente+'!');
@@ -152,11 +165,12 @@ function abrir(pagina){window.location.href=pagina;}
 
 /* LOGOUT */
 function logout(){
+  localStorage.clear();
   $('#homeBox').style.display='none';
   $('#loginBox').style.display='block';
   $('#senha').value='';
   $('#usuarioSelect').value='';
-  localStorage.clear();
+  toast('Sessão encerrada.');
 }
 
 /* TOAST */
