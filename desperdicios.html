@@ -162,27 +162,45 @@ function renderLista(){
     </div>`).join('');
 }
 
-/* ==== REGISTRAR ==== */
 async function registrarItem(){
   const cat=$('#categoria').value.trim();
   const item=$('#item').value.trim();
   const qtd=$('#quantidade').value.trim();
   const un=$('#unidade').value.trim();
   const obs=$('#observacao').value.trim();
-  if(!cat||!item||!qtd||!un)return toast('⚠️ Preencha todos os campos.');
+
+  if(!cat||!item||!qtd||!un){
+    return toast('⚠️ Preencha todos os campos.');
+  }
+  if(!obs){
+    return toast('⚠️ Informe a observação antes de registrar.');
+  }
 
   try{
-    await fetch(GAS_URL,{method:'POST',body:JSON.stringify({
-      action:'registrarDesperdicio',
-      empresa:empresaAtual,
-      gerente:gerenteAtual,
-      categoria:cat,item,quantidade:qtd,unidade:un,observacao:obs
-    })});
+    await fetch(GAS_URL,{
+      method:'POST',
+      body:JSON.stringify({
+        action:'registrarDesperdicio',
+        empresa:empresaAtual,
+        gerente:gerenteAtual,
+        categoria:cat,
+        item,
+        quantidade:qtd,
+        unidade:un,
+        observacao:obs
+      })
+    });
     toast('✅ Registro salvo!');
-    $('#item').value='';$('#quantidade').value='';$('#unidade').value='';$('#observacao').value='';
+    $('#item').value='';
+    $('#quantidade').value='';
+    $('#unidade').value='';
+    $('#observacao').value='';
     carregar(true);
-  }catch{toast('Erro ao salvar.');}
+  }catch{
+    toast('Erro ao salvar.');
+  }
 }
+
 
 /* ==== DETALHES ==== */
 function mostrarRegistro(item){
