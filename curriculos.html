@@ -118,6 +118,19 @@ function toast(msg){
   clearTimeout(t._hide);t._hide=setTimeout(()=>t.style.display='none',2000);
 }
 
+function formatarData(iso){
+  try{
+    const d=new Date(iso);
+    if(isNaN(d)) return iso;
+    const dd=String(d.getDate()).padStart(2,'0');
+    const mm=String(d.getMonth()+1).padStart(2,'0');
+    const yyyy=d.getFullYear();
+    const hh=String(d.getHours()).padStart(2,'0');
+    const min=String(d.getMinutes()).padStart(2,'0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  }catch{return iso;}
+}
+
 async function carregar(){
   tabela.innerHTML="";count.textContent="Carregando...";
   try{
@@ -139,7 +152,7 @@ function render(dados){
   if(fim)arr=arr.filter(r=>new Date(r[1])<=new Date(fim+"T23:59"));
   if(area)arr=arr.filter(r=>(r[4]||"").toLowerCase()==area.toLowerCase());
   tabela.innerHTML=arr.map(r=>{
-    const dt=r[1],nome=r[2],idade=r[3]||"-",a=r[4]||"-",link=r[5];
+    const dt=formatarData(r[1]),nome=r[2],idade=r[3]||"-",a=r[4]||"-",link=r[5];
     return `<tr>
       <td>${dt}</td>
       <td>${nome}</td>
