@@ -94,19 +94,28 @@
       return `<span class="pendente">PENDENTE</span>`;
     }
 
-    async function atualizarStatus(linha, novoStatus) {
-      if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acao: 'atualizar', linha, status: novoStatus })
-        });
-        carregarReservas();
-      } catch (err) {
-        alert('Erro ao atualizar status.');
-      }
-    }
+async function atualizarStatus(linha, novoStatus) {
+  if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
+  try {
+    const formData = new FormData();
+    formData.append("acao", "atualizar");
+    formData.append("linha", linha);
+    formData.append("status", novoStatus);
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    const txt = await res.text();
+    console.log("Retorno do GAS:", txt);
+    carregarReservas();
+  } catch (err) {
+    alert("Erro ao atualizar status.");
+    console.error(err);
+  }
+}
+
 
     carregarReservas();
   </script>
