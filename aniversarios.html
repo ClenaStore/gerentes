@@ -17,32 +17,49 @@
     }
     header {
       background:var(--accent); color:#fff; text-align:center; padding:14px 0;
-      font-weight:700; font-size:1.2rem;
+      font-weight:700; font-size:1.1rem;
     }
     #lista {
       display:flex; flex-direction:column; gap:12px;
-      padding:16px; margin-bottom:60px;
+      padding:14px; margin-bottom:60px;
     }
     .card {
       background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
-      padding:16px;
+      padding:14px; font-size:0.95rem;
     }
-    .info { font-size:0.9rem; color:var(--muted); margin:4px 0; }
-    .nome { font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:6px; }
+    .info { font-size:0.85rem; color:var(--muted); margin:4px 0; }
+    .nome { font-weight:600; color:var(--text); font-size:1rem; margin-bottom:6px; }
     .botoes { display:flex; gap:10px; margin-top:10px; }
     .btn {
       flex:1; border:none; border-radius:var(--radius);
       color:#fff; font-weight:600; padding:10px; cursor:pointer; transition:.2s;
+      position:relative; overflow:hidden;
     }
+    .btn span { position:relative; z-index:2; }
     .ok { background:var(--ok); }
     .no { background:var(--no); }
+    .btn.loading span { visibility:hidden; }
+    .btn.loading::after {
+      content:''; position:absolute; inset:0;
+      background:rgba(255,255,255,0.4);
+      display:flex; justify-content:center; align-items:center;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{opacity:.4;} 50%{opacity:1;}
+    }
     .pendente { background:#fde68a; color:#92400e; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
     .aprovado { background:#bbf7d0; color:#065f46; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
     .negado { background:#fecaca; color:#7f1d1d; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
     #carregando { text-align:center; margin-top:40px; color:var(--muted); font-weight:600; }
     footer {
       position:fixed; bottom:0; width:100%; background:#fff; border-top:1px solid #e5e7eb;
-      text-align:center; padding:8px; font-size:0.85rem; color:var(--muted);
+      text-align:center; padding:8px; font-size:0.8rem; color:var(--muted);
+    }
+    @media (max-width:480px){
+      .card{padding:12px;}
+      .nome{font-size:1rem;}
+      .btn{padding:9px;font-size:0.85rem;}
     }
   </style>
 </head>
@@ -52,7 +69,13 @@
   <footer>Mercatto Delícia • Painel Administrativo</footer>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwWng9nYKxOdrH0VGOhdAEzWGiEwUVPYxJUnI4XtQmGlsc-Sa8VwZw54kbFdGfYpNpuow/exec'; // 🔗 Substitua pelo mesmo Apps Script
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwWng9nYKxOdrH0VGOhdAEzWGiEwUVPYxJUnI4XtQmGlsc-Sa8VwZw54kbFdGfYpNpuow/exec';
+
+    function formatarDataHora() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} • ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
 
     async function carregarReservas() {
       const lista = document.getElementById('lista');
@@ -75,10 +98,11 @@
             <div class="info">🎉 ${r.ocasiao}</div>
             <div class="info">💬 ${r.obs || '—'}</div>
             <div class="info">${statusBadge(r.status)}</div>
+            <div class="info" style="font-size:0.8rem;color:var(--muted);">📆 Atualizado: ${formatarDataHora()}</div>
             ${r.status === 'PENDENTE' ? `
               <div class="botoes">
-                <button class="btn ok" onclick="atualizarStatus('${r.linha}','APROVADO')">Aprovar</button>
-                <button class="btn no" onclick="atualizarStatus('${r.linha}','NEGADO')">Negar</button>
+                <button class="btn ok" id="btn-ok-${r.linha}" onclick="atualizarStatus('${r.linha}','APROVADO', this)"><span>Aprovar</span></button>
+                <button class="btn no" id="btn-no-${r.linha}" onclick="atualizarStatus('${r.linha}','NEGADO', this)"><span>Negar</span></button>
               </div>` : ''}
           `;
           lista.appendChild(card);
@@ -94,28 +118,26 @@
       return `<span class="pendente">PENDENTE</span>`;
     }
 
-async function atualizarStatus(linha, novoStatus) {
-  if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
-  try {
-    const formData = new FormData();
-    formData.append("acao", "atualizar");
-    formData.append("linha", linha);
-    formData.append("status", novoStatus);
+    async function atualizarStatus(linha, novoStatus, btn) {
+      if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
+      btn.classList.add('loading');
+      try {
+        const formData = new FormData();
+        formData.append("acao", "atualizar");
+        formData.append("linha", linha);
+        formData.append("status", novoStatus);
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: formData
-    });
-
-    const txt = await res.text();
-    console.log("Retorno do GAS:", txt);
-    carregarReservas();
-  } catch (err) {
-    alert("Erro ao atualizar status.");
-    console.error(err);
-  }
-}
-
+        const res = await fetch(API_URL, { method: "POST", body: formData });
+        const txt = await res.text();
+        console.log("Retorno do GAS:", txt);
+        setTimeout(carregarReservas, 1000);
+      } catch (err) {
+        alert("Erro ao atualizar status.");
+        console.error(err);
+      } finally {
+        btn.classList.remove('loading');
+      }
+    }
 
     carregarReservas();
   </script>
