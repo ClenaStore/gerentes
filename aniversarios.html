@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Painel de Reservas • Mercatto Delícia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#f3f4f6; --card:#fff; --text:#111827; --muted:#6b7280;
+      --accent:#b8860b; --accent-dark:#8b6a05; --ok:#16a34a; --no:#dc2626;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.08);
+    }
+    body {
+      font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);
+      margin:0; padding:0; min-height:100vh;
+    }
+    header {
+      background:var(--accent); color:#fff; text-align:center; padding:14px 0;
+      font-weight:700; font-size:1.2rem;
+    }
+    #lista {
+      display:flex; flex-direction:column; gap:12px;
+      padding:16px; margin-bottom:60px;
+    }
+    .card {
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .info { font-size:0.9rem; color:var(--muted); margin:4px 0; }
+    .nome { font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:6px; }
+    .botoes { display:flex; gap:10px; margin-top:10px; }
+    .btn {
+      flex:1; border:none; border-radius:var(--radius);
+      color:#fff; font-weight:600; padding:10px; cursor:pointer; transition:.2s;
+    }
+    .ok { background:var(--ok); }
+    .no { background:var(--no); }
+    .pendente { background:#fde68a; color:#92400e; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
+    .aprovado { background:#bbf7d0; color:#065f46; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
+    .negado { background:#fecaca; color:#7f1d1d; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
+    #carregando { text-align:center; margin-top:40px; color:var(--muted); font-weight:600; }
+    footer {
+      position:fixed; bottom:0; width:100%; background:#fff; border-top:1px solid #e5e7eb;
+      text-align:center; padding:8px; font-size:0.85rem; color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>📋 Painel de Reservas</header>
+  <div id="lista"><div id="carregando">Carregando reservas...</div></div>
+  <footer>Mercatto Delícia • Painel Administrativo</footer>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/SEU_WEBAPP_URL/exec'; // 🔗 Substitua pelo mesmo Apps Script
+
+    async function carregarReservas() {
+      const lista = document.getElementById('lista');
+      try {
+        const res = await fetch(API_URL + '?acao=listar');
+        const reservas = await res.json();
+        lista.innerHTML = '';
+        if (!reservas.length) {
+          lista.innerHTML = '<p style="text-align:center;color:#6b7280;">Nenhuma reserva encontrada.</p>';
+          return;
+        }
+        reservas.forEach(r => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="nome">${r.nome}</div>
+            <div class="info">📅 ${r.data} • ⏰ ${r.horario}</div>
+            <div class="info">👥 ${r.pessoas} pessoas • 📍 ${r.area}</div>
+            <div class="info">📞 ${r.contato}</div>
+            <div class="info">🎉 ${r.ocasiao}</div>
+            <div class="info">💬 ${r.obs || '—'}</div>
+            <div class="info">${statusBadge(r.status)}</div>
+            ${r.status === 'PENDENTE' ? `
+              <div class="botoes">
+                <button class="btn ok" onclick="atualizarStatus('${r.linha}','APROVADO')">Aprovar</button>
+                <button class="btn no" onclick="atualizarStatus('${r.linha}','NEGADO')">Negar</button>
+              </div>` : ''}
+          `;
+          lista.appendChild(card);
+        });
+      } catch (err) {
+        lista.innerHTML = '<p style="text-align:center;color:red;">Erro ao carregar reservas.</p>';
+      }
+    }
+
+    function statusBadge(status) {
+      if (status === 'APROVADO') return `<span class="aprovado">APROVADO</span>`;
+      if (status === 'NEGADO') return `<span class="negado">NEGADO</span>`;
+      return `<span class="pendente">PENDENTE</span>`;
+    }
+
+    async function atualizarStatus(linha, novoStatus) {
+      if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'atualizar', linha, status: novoStatus })
+        });
+        carregarReservas();
+      } catch (err) {
+        alert('Erro ao atualizar status.');
+      }
+    }
+
+    carregarReservas();
+  </script>
+</body>
+</html>
