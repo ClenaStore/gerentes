@@ -68,78 +68,86 @@
   <div id="lista"><div id="carregando">Carregando reservas...</div></div>
   <footer>Mercatto Delícia • Painel Administrativo</footer>
 
-  <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwWng9nYKxOdrH0VGOhdAEzWGiEwUVPYxJUnI4XtQmGlsc-Sa8VwZw54kbFdGfYpNpuow/exec';
+<script>
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwWng9nYKxOdrH0VGOhdAEzWGiEwUVPYxJUnI4XtQmGlsc-Sa8VwZw54kbFdGfYpNpuow/exec';
 
-    function formatarDataHora() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} • ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  /** Formata data e hora no estilo Mercatto */
+  function formatarDataHoraCompleta(data, hora) {
+    // Corrige formato vindo da planilha
+    try {
+      const dataFormatada = new Date(data);
+      const [h, m] = hora.includes('T') ? new Date(hora).toISOString().substr(11,5).split(':') : hora.split(':');
+      const pad = n => String(n).padStart(2,'0');
+      return `${pad(dataFormatada.getDate())}/${pad(dataFormatada.getMonth()+1)}/${dataFormatada.getFullYear()} • ${pad(h)}:${pad(m)}`;
+    } catch(e) {
+      return `${data} • ${hora}`;
     }
+  }
 
-    async function carregarReservas() {
-      const lista = document.getElementById('lista');
-      try {
-        const res = await fetch(API_URL + '?acao=listar');
-        const reservas = await res.json();
-        lista.innerHTML = '';
-        if (!reservas.length) {
-          lista.innerHTML = '<p style="text-align:center;color:#6b7280;">Nenhuma reserva encontrada.</p>';
-          return;
-        }
-        reservas.forEach(r => {
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `
-            <div class="nome">${r.nome}</div>
-            <div class="info">📅 ${r.data} • ⏰ ${r.horario}</div>
-            <div class="info">👥 ${r.pessoas} pessoas • 📍 ${r.area}</div>
-            <div class="info">📞 ${r.contato}</div>
-            <div class="info">🎉 ${r.ocasiao}</div>
-            <div class="info">💬 ${r.obs || '—'}</div>
-            <div class="info">${statusBadge(r.status)}</div>
-            <div class="info" style="font-size:0.8rem;color:var(--muted);">📆 Atualizado: ${formatarDataHora()}</div>
-            ${r.status === 'PENDENTE' ? `
-              <div class="botoes">
-                <button class="btn ok" id="btn-ok-${r.linha}" onclick="atualizarStatus('${r.linha}','APROVADO', this)"><span>Aprovar</span></button>
-                <button class="btn no" id="btn-no-${r.linha}" onclick="atualizarStatus('${r.linha}','NEGADO', this)"><span>Negar</span></button>
-              </div>` : ''}
-          `;
-          lista.appendChild(card);
-        });
-      } catch (err) {
-        lista.innerHTML = '<p style="text-align:center;color:red;">Erro ao carregar reservas.</p>';
+  async function carregarReservas() {
+    const lista = document.getElementById('lista');
+    try {
+      const res = await fetch(API_URL + '?acao=listar');
+      const reservas = await res.json();
+      lista.innerHTML = '';
+      if (!reservas.length) {
+        lista.innerHTML = '<p style="text-align:center;color:#6b7280;">Nenhuma reserva encontrada.</p>';
+        return;
       }
+      reservas.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const dataHora = formatarDataHoraCompleta(r.data, r.horario);
+        card.innerHTML = `
+          <div class="nome">${r.nome}</div>
+          <div class="info">📅 ${dataHora}</div>
+          <div class="info">👥 ${r.pessoas} pessoas • 📍 ${r.area}</div>
+          <div class="info">📞 ${r.contato}</div>
+          <div class="info">🎉 ${r.ocasiao}</div>
+          <div class="info">💬 ${r.obs || '—'}</div>
+          <div class="info">${statusBadge(r.status)}</div>
+          ${r.status === 'PENDENTE' ? `
+            <div class="botoes">
+              <button class="btn ok" onclick="atualizarStatus('${r.linha}','APROVADO', this)"><span>Aprovar</span></button>
+              <button class="btn no" onclick="atualizarStatus('${r.linha}','NEGADO', this)"><span>Negar</span></button>
+            </div>` : ''}
+        `;
+        lista.appendChild(card);
+      });
+    } catch (err) {
+      lista.innerHTML = '<p style="text-align:center;color:red;">Erro ao carregar reservas.</p>';
     }
+  }
 
-    function statusBadge(status) {
-      if (status === 'APROVADO') return `<span class="aprovado">APROVADO</span>`;
-      if (status === 'NEGADO') return `<span class="negado">NEGADO</span>`;
-      return `<span class="pendente">PENDENTE</span>`;
+  function statusBadge(status) {
+    if (status === 'APROVADO') return `<span class="aprovado">APROVADO</span>`;
+    if (status === 'NEGADO') return `<span class="negado">NEGADO</span>`;
+    return `<span class="pendente">PENDENTE</span>`;
+  }
+
+  async function atualizarStatus(linha, novoStatus, btn) {
+    if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
+    btn.classList.add('loading');
+    try {
+      const formData = new FormData();
+      formData.append("acao", "atualizar");
+      formData.append("linha", linha);
+      formData.append("status", novoStatus);
+
+      const res = await fetch(API_URL, { method: "POST", body: formData });
+      const txt = await res.text();
+      console.log("Retorno do GAS:", txt);
+      setTimeout(carregarReservas, 1000);
+    } catch (err) {
+      alert("Erro ao atualizar status.");
+      console.error(err);
+    } finally {
+      btn.classList.remove('loading');
     }
+  }
 
-    async function atualizarStatus(linha, novoStatus, btn) {
-      if (!confirm(`Deseja marcar esta reserva como ${novoStatus}?`)) return;
-      btn.classList.add('loading');
-      try {
-        const formData = new FormData();
-        formData.append("acao", "atualizar");
-        formData.append("linha", linha);
-        formData.append("status", novoStatus);
+  carregarReservas();
+</script>
 
-        const res = await fetch(API_URL, { method: "POST", body: formData });
-        const txt = await res.text();
-        console.log("Retorno do GAS:", txt);
-        setTimeout(carregarReservas, 1000);
-      } catch (err) {
-        alert("Erro ao atualizar status.");
-        console.error(err);
-      } finally {
-        btn.classList.remove('loading');
-      }
-    }
-
-    carregarReservas();
-  </script>
 </body>
 </html>
