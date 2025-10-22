@@ -115,27 +115,32 @@ async function carregarReservas(){
       lista.innerHTML='<p style="text-align:center;color:#6b7280;">Nenhuma reserva encontrada.</p>';
       return;
     }
-    reservas.forEach(r=>{
-      const card=document.createElement('div');
-      card.className='card';
-      const dataFmt=formatarDataPlanilha(r.data);
-      const horaFmt=formatarHoraPlanilha(r.horario);
-      card.innerHTML=`
-        <div class="nome">${r.nome}</div>
-        <div class="info">📅 ${dataFmt} • ⏰ ${horaFmt}</div>
-        <div class="info">👥 ${r.pessoas} pessoas • 📍 ${r.area}</div>
-        <div class="info">📞 ${r.contato}</div>
-        <div class="info">🎉 ${r.ocasiao}</div>
-        <div class="info">💬 ${r.obs || '—'}</div>
-        <div class="info">${statusBadge(r.status)}</div>
-        ${r.status==='PENDENTE'?`
-        <div class="botoes">
-          <button class="btn ok" onclick="atualizarStatus('${r.linha}','APROVADO',this)"><span>Aprovar</span></button>
-          <button class="btn no" onclick="atualizarStatus('${r.linha}','NEGADO',this)"><span>Negar</span></button>
-        </div>`:''}
-      `;
-      lista.appendChild(card);
-    });
+reservas.forEach(r=>{
+  const card=document.createElement('div');
+  card.className='card';
+  const dataFmt=formatarDataPlanilha(r.data);
+  const horaFmt=formatarHoraPlanilha(r.horario);
+  const numeroLimpo = r.contato.replace(/\D/g,''); // remove espaços e símbolos
+  const linkWhats = `https://wa.me/${numeroLimpo}?text=Olá%20${encodeURIComponent(r.nome)},%20aqui%20é%20o%20Mercatto%20Delícia!%20🍽️%20Estamos%20entrando%20em%20contato%20sobre%20sua%20reserva.`;
+
+  card.innerHTML=`
+    <div class="nome">${r.nome}</div>
+    <div class="info">📅 ${dataFmt} • ⏰ ${horaFmt}</div>
+    <div class="info">👥 ${r.pessoas} pessoas • 📍 ${r.area}</div>
+    <div class="info">📞 ${r.contato}</div>
+    <div class="info">🎉 ${r.ocasiao}</div>
+    <div class="info">💬 ${r.obs || '—'}</div>
+    <div class="info">${statusBadge(r.status)}</div>
+    <div class="botoes">
+      <button class="btn" style="background:#25d366;" onclick="abrirWhats('${linkWhats}')"><span>WhatsApp</span></button>
+      ${r.status==='PENDENTE'?`
+      <button class="btn ok" onclick="atualizarStatus('${r.linha}','APROVADO',this)"><span>Aprovar</span></button>
+      <button class="btn no" onclick="atualizarStatus('${r.linha}','NEGADO',this)"><span>Negar</span></button>`:''}
+    </div>
+  `;
+  lista.appendChild(card);
+});
+
   }catch(err){
     lista.innerHTML='<p style="text-align:center;color:red;">Erro ao carregar reservas.</p>';
     console.error(err);
@@ -168,6 +173,10 @@ async function atualizarStatus(linha,novoStatus,btn){
 }
 
 carregarReservas();
+  function abrirWhats(url){
+  window.open(url,'_blank');
+}
+
 </script>
 
 </body>
