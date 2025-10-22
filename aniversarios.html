@@ -8,11 +8,9 @@
   <style>
     :root {
       --bg:#f3f4f6; --card:#fff; --text:#111827; --muted:#6b7280;
-      --accent:#b8860b; --accent-dark:#8b6a05;
-      --ok:#16a34a; --no:#dc2626;
+      --accent:#b8860b; --accent-dark:#8b6a05; --ok:#16a34a; --no:#dc2626;
       --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.08);
     }
-    *{box-sizing:border-box;}
     body {
       font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);
       margin:0; padding:0; min-height:100vh;
@@ -21,30 +19,16 @@
       background:var(--accent); color:#fff; text-align:center; padding:14px 0;
       font-weight:700; font-size:1.2rem;
     }
-    #login {
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      height:100vh; text-align:center; padding:20px;
-    }
-    #login input {
-      margin:10px 0; padding:12px; border-radius:10px; border:1px solid #d1d5db;
-      width:90%; max-width:300px; font-size:16px;
-    }
-    #login button {
-      background:var(--accent); color:#fff; border:none; padding:12px 20px;
-      border-radius:10px; font-weight:600; cursor:pointer;
-    }
-    #login button:hover { background:var(--accent-dark); }
-
     #lista {
       display:flex; flex-direction:column; gap:12px;
       padding:16px; margin-bottom:60px;
     }
     .card {
-      background:var(--card); border-radius:var(--radius);
-      box-shadow:var(--shadow); padding:16px;
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px;
     }
-    .nome { font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:6px; }
     .info { font-size:0.9rem; color:var(--muted); margin:4px 0; }
+    .nome { font-weight:600; color:var(--text); font-size:1.05rem; margin-bottom:6px; }
     .botoes { display:flex; gap:10px; margin-top:10px; }
     .btn {
       flex:1; border:none; border-radius:var(--radius);
@@ -52,13 +36,9 @@
     }
     .ok { background:var(--ok); }
     .no { background:var(--no); }
-    .ok:hover { opacity:.9; } .no:hover { opacity:.9; }
-    .pendente { background:#fde68a; color:#92400e; padding:4px 10px;
-      border-radius:8px; font-size:0.75rem; display:inline-block; }
-    .aprovado { background:#bbf7d0; color:#065f46; padding:4px 10px;
-      border-radius:8px; font-size:0.75rem; display:inline-block; }
-    .negado { background:#fecaca; color:#7f1d1d; padding:4px 10px;
-      border-radius:8px; font-size:0.75rem; display:inline-block; }
+    .pendente { background:#fde68a; color:#92400e; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
+    .aprovado { background:#bbf7d0; color:#065f46; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
+    .negado { background:#fecaca; color:#7f1d1d; padding:4px 10px; border-radius:8px; font-size:0.75rem; display:inline-block; }
     #carregando { text-align:center; margin-top:40px; color:var(--muted); font-weight:600; }
     footer {
       position:fixed; bottom:0; width:100%; background:#fff; border-top:1px solid #e5e7eb;
@@ -67,42 +47,15 @@
   </style>
 </head>
 <body>
-  <div id="login">
-    <h2>🔒 Acesso Restrito</h2>
-    <p>Digite a senha de administrador para acessar o painel</p>
-    <input type="password" id="senha" placeholder="Senha de acesso" />
-    <button onclick="verificarLogin()">Entrar</button>
-    <p id="erro" style="color:red; font-weight:600;"></p>
-  </div>
-
-  <div id="painel" style="display:none;">
-    <header>📋 Painel de Reservas</header>
-    <div id="lista"><div id="carregando">Carregando reservas...</div></div>
-    <footer>Mercatto Delícia • Painel Administrativo</footer>
-  </div>
+  <header>📋 Painel de Reservas</header>
+  <div id="lista"><div id="carregando">Carregando reservas...</div></div>
+  <footer>Mercatto Delícia • Painel Administrativo</footer>
 
   <script>
-    /******** CONFIGURAÇÕES ********/
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzB--ieywTcHYg5CZuSp64AJOSnbolX9j1I15KrNchKf6_f_EaR1qVbD4xQyeK_Ytdt/exec'; // 🔗 SEU ENDPOINT
-    const SENHA = "admin123"; // 🔐 Altere se quiser
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxSRueDNnV-uXYjqlfVDfr8UNHuP-z3mt_v23Ha6KFAUZQmemQNcD2nIaLV2HHxRtsv1A/exec'; // 🔗 Substitua pelo mesmo Apps Script
 
-    /******** LOGIN ********/
-    function verificarLogin() {
-      const senha = document.getElementById('senha').value.trim();
-      const erro = document.getElementById('erro');
-      if (senha === SENHA) {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('painel').style.display = 'block';
-        carregarReservas();
-      } else {
-        erro.textContent = "Senha incorreta!";
-      }
-    }
-
-    /******** PAINEL ********/
     async function carregarReservas() {
       const lista = document.getElementById('lista');
-      lista.innerHTML = '<div id="carregando">Carregando reservas...</div>';
       try {
         const res = await fetch(API_URL + '?acao=listar');
         const reservas = await res.json();
@@ -154,6 +107,8 @@
         alert('Erro ao atualizar status.');
       }
     }
+
+    carregarReservas();
   </script>
 </body>
 </html>
